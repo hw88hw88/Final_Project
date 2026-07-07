@@ -10,29 +10,61 @@ class TestAPIFinData(unittest.TestCase):
     # test if the class, variables and functions can be created successfully or not
     def test_class_functions(self):
         self.assertIsNotNone(api_fin_data.APIFinData)
-        self.assertIsNotNone(api_fin_data.APIFinData())
 
         get_fin_data=api_fin_data.APIFinData()
         self.assertIsNotNone(get_fin_data.stock_symbol_file)
         self.assertIsNotNone(get_fin_data.json_filename)
         self.assertIsNotNone(get_fin_data.get_symbol_from_csv)
         self.assertIsNotNone(get_fin_data.get_financial_data)
-        self.assertIsNotNone(get_fin_data.to_json)
+        self.assertIsNotNone(get_fin_data.append_to_json)
         self.assertIsNotNone(get_fin_data.read_from_pickle_binary_file)
         self.assertIsNotNone(get_fin_data.write_to_pickle_binary_file)
+        self.assertIsNotNone(get_fin_data.get_1st_date)
+        self.assertIsNotNone(get_fin_data.get_last_date)
 
-    # test if functions return something
+    # test if functions return or output something
     def test_function_returns(self):
         get_fin_data=api_fin_data.APIFinData()
+
+        # checking "get_symbol_from_csv()"
         self.assertIsNotNone(get_fin_data.get_symbol_from_csv())
-        # make request to external API
+
+        # checking "get_financial_data()"
+        ## make request to external API
         symbol='MSFT'
-        data=get_fin_data.get_financial_data(symbol=symbol)
-        self.assertIsNotNone(data)
+        data_msft=get_fin_data.get_financial_data(symbol=symbol)
+        self.assertIsNotNone(data_msft)
 
         symbol='ABC'
         data=get_fin_data.get_financial_data(symbol=symbol)
         self.assertIsNone(data)
+
+        # checking "append_to_json()"
+        test_json_path='JSON/test.json'
+        get_fin_data.append_to_json({'content': 'test content'}, test_json_path)
+        self.assertTrue(os.path.exists(test_json_path))
+        os.remove(test_json_path)
+
+        # checking "write_to_pickle_binary_file()"
+        test_pickle_path='pickle/test.pickle'
+        get_fin_data.write_to_pickle_binary_file(test_pickle_path, 'test data')
+        self.assertTrue(os.path.exists(test_pickle_path))
+
+        # checking "read_from_pickle_binary_file()"
+        read_pickle=get_fin_data.read_from_pickle_binary_file(test_pickle_path)
+        self.assertIsNotNone(read_pickle)
+        self.assertEqual(str(read_pickle), 'test data')
+
+        ## remove the test pickle file
+        os.remove(test_pickle_path)
+
+        # checking "get_1st_date()"
+        self.assertIsNotNone(get_fin_data.get_1st_date(data_msft))
+
+        # checking "get_last_date()"
+        self.assertIsNotNone(get_fin_data.get_last_date(data_msft))
+
+        
 
     # test if variables store correct type of data
     def test_var_type(self):

@@ -3,15 +3,16 @@ import pickle
 import time
 import json
 import yfinance as yf
+import pandas as pd
 
-class APIFinData():
+class APIFinData:
     def __init__(self):
         # store the file path of stock code
         self.stock_symbol_file='CSV/stock_code.csv'
-        # store the file path of downloadable stock code
+        # store the file path of the stock code which the data of the stock was downloadble
         self.stock_symbol_file_downloadable='CSV/downloadable_stock_code.csv'
         # store the log file path
-        self.json_filename='JSON/log.json'
+        self.json_filename='JSON/api_log.json'
 
     # this function retrieve the symbols of constituent stocks of the Standard & Poor’s 500 (S&P500) on a specified date from a csv file
     def get_symbol_from_csv(self):
@@ -63,26 +64,57 @@ class APIFinData():
             # save to human readable format, CSV file
             raw_data.to_csv(df_csv_filename)
             # saving the log of the requests to external API        
-            self.to_json(to_json_content={'symbol': symbol} , filename=self.json_filename)
+            self.append_to_json(to_json_content={'symbol': symbol} , filename=self.json_filename)
         else:
             # load data from file
             raw_data=self.read_from_pickle_binary_file(filename=pickle_filename)
         return raw_data
+    
+    # finding the first timestamp in the pandas frame from yfinance
+    # input: data frame storing a single stock
+    # output: the first timestamp in the input data frame, in the format of pandas timestamp
+    @staticmethod
+    def get_1st_date(df):
+        # finding the 1st day in the data frame
+        df_dict=df.to_dict()
+        ## the keys of the dict() are the name of columns
+        df_dict_columns=list(df_dict.keys())
+        ## the keys are the time stamp of each row
+        df_dict_key_time=list(df_dict[df_dict_columns[0]].keys())
+        ## the first timestamp
+        return pd.Timestamp(df_dict_key_time[0])
+    
+    # finding the last timestamp in the pandas frame from yfinance
+    # input: data frame storing a single stock
+    # output: the last timestamp in the input data frame, in the format of pandas timestamp
+    @staticmethod
+    def get_last_date(df):
+        # finding the 1st day in the data frame
+        df_dict=df.to_dict()
+        ## the keys of the dict() are the name of columns
+        df_dict_columns=list(df_dict.keys())
+        ## the keys are the time stamp of each row
+        df_dict_key_time=list(df_dict[df_dict_columns[0]].keys())
+        ## the last timestamp
+        return pd.Timestamp(df_dict_key_time[-1])
 
     # converting data the json format and save to a file (append the content)
-    def to_json(self, to_json_content, filename):
+    @staticmethod
+    def append_to_json(to_json_content, filename):
         content = json.dumps(to_json_content)
         with open(filename, 'a') as f:
             f.write(content)
 
     # reading pickle from binary file
-    def read_from_pickle_binary_file(self, filename):
+    @staticmethod
+    def read_from_pickle_binary_file(filename):
         with open(filename, 'rb') as f:
             data = f.read()
         return pickle.loads(data)
 
     # writing pickle to binary file
-    def write_to_pickle_binary_file(self, filename, data):
+    @staticmethod
+    def write_to_pickle_binary_file(filename, data):
         pickled_data=pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
         with open(filename, 'wb') as f:
             f.write(pickled_data)
