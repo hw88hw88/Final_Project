@@ -19,17 +19,16 @@ class TestAPIFinData(unittest.TestCase):
         self.assertIsNotNone(get_fin_data.append_to_json)
         self.assertIsNotNone(get_fin_data.read_from_pickle_binary_file)
         self.assertIsNotNone(get_fin_data.write_to_pickle_binary_file)
-        self.assertIsNotNone(get_fin_data.get_1st_date)
-        self.assertIsNotNone(get_fin_data.get_last_date)
+        self.assertIsNotNone(get_fin_data.get_nth_date)
 
     # test if functions return or output something
     def test_function_returns(self):
         get_fin_data=api_fin_data.APIFinData()
 
-        # checking "get_symbol_from_csv()"
+        # testing "get_symbol_from_csv()"
         self.assertIsNotNone(get_fin_data.get_symbol_from_csv())
 
-        # checking "get_financial_data()"
+        # testing "get_financial_data()"
         ## make request to external API
         symbol='MSFT'
         data_msft=get_fin_data.get_financial_data(symbol=symbol)
@@ -39,18 +38,18 @@ class TestAPIFinData(unittest.TestCase):
         data=get_fin_data.get_financial_data(symbol=symbol)
         self.assertIsNone(data)
 
-        # checking "append_to_json()"
+        # testing "append_to_json()"
         test_json_path='JSON/test.json'
         get_fin_data.append_to_json({'content': 'test content'}, test_json_path)
         self.assertTrue(os.path.exists(test_json_path))
         os.remove(test_json_path)
 
-        # checking "write_to_pickle_binary_file()"
+        # testing "write_to_pickle_binary_file()"
         test_pickle_path='pickle/test.pickle'
         get_fin_data.write_to_pickle_binary_file(test_pickle_path, 'test data')
         self.assertTrue(os.path.exists(test_pickle_path))
 
-        # checking "read_from_pickle_binary_file()"
+        # testing "read_from_pickle_binary_file()"
         read_pickle=get_fin_data.read_from_pickle_binary_file(test_pickle_path)
         self.assertIsNotNone(read_pickle)
         self.assertEqual(str(read_pickle), 'test data')
@@ -58,11 +57,9 @@ class TestAPIFinData(unittest.TestCase):
         ## remove the test pickle file
         os.remove(test_pickle_path)
 
-        # checking "get_1st_date()"
-        self.assertIsNotNone(get_fin_data.get_1st_date(data_msft))
-
-        # checking "get_last_date()"
-        self.assertIsNotNone(get_fin_data.get_last_date(data_msft))
+        # testing "get_nth_date()"
+        self.assertIsNotNone(get_fin_data.get_nth_date(data_msft))
+        self.assertIsNotNone(get_fin_data.get_nth_date(data_msft, n=0))
 
         
 

@@ -12,7 +12,7 @@ class TestGenome(unittest.TestCase):
         self.assertIsNotNone(g.get_random_gene)
         self.assertIsNotNone(g.get_gene_spec)
         self.assertIsNotNone(g.get_gdict)
-        self.assertIsNotNone(g.to_json)
+        self.assertIsNotNone(g.write_to_json)
 
     # test if functions return something
     def test_function_returns(self):
@@ -76,15 +76,16 @@ class TestGenome(unittest.TestCase):
                 self.assertEqual(k_in_k[0], 'low_limit')
                 self.assertEqual(k_in_k[1], 'up_limit')
                 # check if the value of the 2 element are integers
-                self.assertEqual(str(type(g.get_gene_spec()[k][k_in_k[0]])), "<class 'int'>")
-                self.assertEqual(str(type(g.get_gene_spec()[k][k_in_k[1]])), "<class 'int'>")
+                self.assertTrue((str(type(g.get_gene_spec()[k][k_in_k[0]])) == "<class 'float'>") or 
+                                (str(type(g.get_gene_spec()[k][k_in_k[0]])) == "<class 'int'>"))
+                self.assertTrue(str(type(g.get_gene_spec()[k][k_in_k[1]])) == "<class 'int'>" or str(type(g.get_gene_spec()[k][k_in_k[1]])) == "<class 'float'>")
 
     # test if json file can be created successfully
     def test_to_json(self):
         g=genome.Genome()
         filename='JSON/test.json'
         content='test content'
-        self.assertIsNone(g.to_json(content=content, filename=filename))
+        self.assertIsNone(g.write_to_json(content=content, filename=filename))
         self.assertTrue(os.path.exists(filename))
         with open(filename) as f:
             file_content=f.read()

@@ -70,33 +70,30 @@ class APIFinData:
             raw_data=self.read_from_pickle_binary_file(filename=pickle_filename)
         return raw_data
     
-    # finding the first timestamp in the pandas frame from yfinance
-    # input: data frame storing a single stock
-    # output: the first timestamp in the input data frame, in the format of pandas timestamp
+    # finding the n (default: the first, if n is None) timestamp in the pandas frame from yfinance
+    # input: 
+    ## 1. df: data frame storing a single stock
+    ## 2. n: (int) the Nth day in the data frame
+    # output: the n timestamp in the input data frame, in the format of pandas timestamp
     @staticmethod
-    def get_1st_date(df):
+    def get_nth_date(df, n=None):
         # finding the 1st day in the data frame
         df_dict=df.to_dict()
         ## the keys of the dict() are the name of columns
         df_dict_columns=list(df_dict.keys())
         ## the keys are the time stamp of each row
         df_dict_key_time=list(df_dict[df_dict_columns[0]].keys())
-        ## the first timestamp
-        return pd.Timestamp(df_dict_key_time[0])
-    
-    # finding the last timestamp in the pandas frame from yfinance
-    # input: data frame storing a single stock
-    # output: the last timestamp in the input data frame, in the format of pandas timestamp
-    @staticmethod
-    def get_last_date(df):
-        # finding the 1st day in the data frame
-        df_dict=df.to_dict()
-        ## the keys of the dict() are the name of columns
-        df_dict_columns=list(df_dict.keys())
-        ## the keys are the time stamp of each row
-        df_dict_key_time=list(df_dict[df_dict_columns[0]].keys())
-        ## the last timestamp
-        return pd.Timestamp(df_dict_key_time[-1])
+        if n is None:
+            ## the first timestamp
+            return pd.Timestamp(df_dict_key_time[0])
+        else:
+            ## the Nth timestamp
+            if abs(n) < len(df_dict_key_time):
+                return pd.Timestamp(df_dict_key_time[n])
+            else:
+                # if abs(n) is large than the number of rows in the data frame
+                # return the last date in the data frame
+                return pd.Timestamp(df_dict_key_time[-1])
 
     # converting data the json format and save to a file (append the content)
     @staticmethod

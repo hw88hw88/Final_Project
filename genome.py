@@ -19,7 +19,9 @@ class Genome:
     (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
 
     The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
-    All the code was written and prepared by the author of this project, with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
 
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
@@ -106,7 +108,9 @@ class Genome:
     (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
 
     The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
-    All the code was written and prepared by the author of this project, with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
 
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
@@ -141,12 +145,15 @@ class Genome:
 
             # risk management rules:
             ## sell the shares when the loss is above 'stop_loss'
-            'stop_loss': {'low_limit': 3, 'up_limit':10},
+            'stop_loss': {'low_limit': -0.03, 'up_limit':-0.1},
             ## sell the shares when the profit is above 'take_profit'
-            'take_profit': {'low_limit': 5, 'up_limit':200},
+            'take_profit': {'low_limit': 0.05, 'up_limit':2.0},
 
-            # total no. of stocks in the investment portfolio
-            'num_of_stock':{'low_limit': 1, 'up_limit':10},
+            # maximum no. of stocks in the investment portfolio
+            'max_num_of_stock':{'low_limit': 1, 'up_limit':10},
+
+            # number of days to rebalance the portfolio to target portfolio
+            'num_of_day_rebalance':{'low_limit':10, 'up_limit':30},
             }
         return genome_spec
     
@@ -177,7 +184,9 @@ class Genome:
     (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
 
     The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
-    All the code was written and prepared by the author of this project, with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
 
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
@@ -197,14 +206,17 @@ class Genome:
         for key in spec:
             # if spec[key]["up_limit"] < spec[key]["low_limit"], I will treat the upper limit as lower limit, and the lower limit as upper limit
             if spec[key]["up_limit"] >= spec[key]["low_limit"]:
-                gene_range = spec[key]["up_limit"] - spec[key]["low_limit"]
+                gene_range = abs(spec[key]["up_limit"] - spec[key]["low_limit"])
                 gdict[key] = gene[ind] * gene_range + spec[key]["low_limit"]
             else:
                 # treating the upper limit as lower limit, and the lower limit as upper limit here
-                gene_range = spec[key]["low_limit"] - spec[key]["up_limit"]            
+                gene_range = abs(spec[key]["low_limit"] - spec[key]["up_limit"])
                 gdict[key] = gene[ind] * gene_range + spec[key]["up_limit"]
             ind += 1
-            gdict[key] = int(np.round(gdict[key], 0))
+            if key != 'stop_loss' and key != 'take_profit':
+                gdict[key] = int(np.round(gdict[key], 0))
+            else:
+                gdict[key] = float(gdict[key])
         return gdict
 
     @staticmethod
