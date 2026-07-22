@@ -10,6 +10,7 @@ class TestStrategy(unittest.TestCase):
         self.assertIsNotNone(strategy.Strategy)
 
         s=strategy.Strategy(start_up_cash=100000)
+        self.assertIsNotNone(s.reset)
         self.assertIsNotNone(s.rewards)
         self.assertIsNotNone(s.cumulative_return)
         self.assertIsNotNone(s.stock_cumulative_return)
@@ -27,6 +28,8 @@ class TestStrategy(unittest.TestCase):
         self.assertIsNotNone(s.start_up_cash)
 
         self.assertIsNotNone(s.gdict)
+        self.assertIsNotNone(s.gene)
+        self.assertIsNotNone(s.spec)
 
         self.assertIsNotNone(s.rebalance)
         self.assertIsNotNone(s.buy_stock)
@@ -272,5 +275,39 @@ class TestStrategy(unittest.TestCase):
         # check if the target stocks were being held and sold
         self.assertIsNotNone(st.stocks['AAPL'])
         self.assertFalse('MSFT' in list(st.stocks.keys()))
+
+    # check fitness()
+    def test_fitness(self):
+        # initialize the test
+        sim=simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
+        start_up_cash=100000
+        st=strategy.Strategy(start_up_cash=start_up_cash)
+        api= api_fin_data.APIFinData()
+
+        symbol='MSFT'
+        s_df_aapl=sim.calculate_fin_indicator_for_stock(st=st, symbol='AAPL')
+        s_df_msft=sim.calculate_fin_indicator_for_stock(st=st, symbol=symbol)
+
+        current_trading_date=api.get_nth_date(df=s_df_aapl, n=1)
+        next_trading_date=api.get_nth_date(df=s_df_aapl, n=2)
+        trading_fee=0.01
+
+        stocks_df=[s_df_aapl, s_df_msft]
+
+        current_target_portfolio=['AAPL', 'MSFT']
+
+        st.rebalance(
+            current_target_portfolio=current_target_portfolio, 
+            stocks_df=stocks_df,
+            current_trading_date=current_trading_date,
+            trading_fee=trading_fee)
+        
+        st.daily_update(
+            stocks_df=stocks_df,
+            current_trading_date=current_trading_date,
+            trading_fee=trading_fee)
+        
+        self.assertFalse(0, st.rewards)
+
 
 unittest.main()

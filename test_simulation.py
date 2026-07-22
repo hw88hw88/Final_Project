@@ -3,6 +3,7 @@ import simulation
 import strategy
 import pandas as pd
 import api_fin_data
+import population
 
 class TestSimulation(unittest.TestCase):
     # test if the class, variables and functions can be created successfully or not
@@ -95,14 +96,20 @@ class TestSimulation(unittest.TestCase):
 
     # test run_strategy()
     def test_run_strategy(self):
-        sim=simulation.Simulation(fin_start='2020-01-01', fin_end='2020-12-31', trading_fee=0.01)
-        start_up_cash=100000
-        st=strategy.Strategy(start_up_cash=start_up_cash)
+        sim = simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
+        start_up_cash =100000
+        st = strategy.Strategy(start_up_cash=start_up_cash)
 
         sim.run_strategy(st=st)
         self.assertEqual(len(list(st.stocks.keys())), 0)
         self.assertNotEqual(st.total_value, start_up_cash)
 
-        print('st.total_value= ', st.total_value)
+    # test eval_population()
+    def test_eval_population(self):
+        sim = simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
+        pop = population.Population(start_up_cash=100000, pop_size=1)
+        sim.eval_population(pop)
+
+        self.assertIsNotNone(pop.strategies[0].age)
 
 unittest.main()

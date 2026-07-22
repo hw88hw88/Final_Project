@@ -2,15 +2,36 @@ import genome
 import numpy as np
 
 class Strategy:
-    def __init__(self, start_up_cash):
+    # initialise the instance
+    # input:
+    # 1. start_up_cash: the start up amount of capital
+    def __init__(self, start_up_cash, gene=None):
+        # the configuration or structure of the strategy
+        spec=genome.Genome.get_gene_spec()
+        self.spec=spec
+        
+        if gene is None:
+            gene=genome.Genome.get_random_gene(len(spec))
+        self.gene=gene
+
+        self.gdict=genome.Genome.get_gdict(
+            gene=gene,
+            spec=spec
+        )
+        
+        self.reset(start_up_cash=start_up_cash)
+
+    # reset the parameters of the strategy
+    # input:
+    # 1. start_up_cash: the start up amount of capital
+    def reset(self, start_up_cash):
         # record the performance
         self.rewards=0
         self.cumulative_return=0
+        # stocks[symbol]['cost'], stocks[symbol]['volume'], stocks[symbol]['date']
         self.stocks={}
         self.stock_cumulative_return={}
-        # self.annual_return=0
         self.max_drawdown=0
-        # self.sharpe_ratio=None
         self.num_of_increase_in_value=0
         self.age=0
         self.num_of_trade=0
@@ -22,14 +43,6 @@ class Strategy:
         self.high_value=self.cash
         self.low_value=self.cash
         self.total_value_sequence=[]
-
-        # the configuration or structure of the strategy
-        spec=genome.Genome.get_gene_spec()
-        gene=genome.Genome.get_random_gene(len(spec))
-        self.gdict=genome.Genome.get_gdict(
-            gene=gene,
-            spec=spec
-        )
 
     # retrieve the market price and volume from the input data
     # input:
@@ -86,6 +99,17 @@ class Strategy:
         ### check if the volume is larger than market volume (very rarely)
         target_volume = min(target_volume, market_volume)
 
+        # check if the volume is > 0 to avoid error from division by 0
+        if target_volume <= 0:
+            print('target volume <= 0, symbol:', symbol, ', date=', current_trading_date)
+            print('stop buying')
+            return
+        elif target_value <= 0:
+            # stop buying if target value is 0 or below 0
+            print('target value <= 0, symbol:', symbol, ', date=', current_trading_date)
+            print('stop buying')
+            return
+
         ## reduce cash
         buying_cost = target_volume * (current_price + trading_fee)
         self.cash -= buying_cost
@@ -130,12 +154,23 @@ class Strategy:
         ### check if the volume is larger than market volume (very rarely)
         volume_to_sell = min(market_volume, volume_to_sell)
 
+        # check if volume > 0
+        if volume_to_sell <= 0:
+            # stop selling if volume is 0 or below 0
+            return
+
         # receiving cash
         self.cash += volume_to_sell * (current_price - trading_fee)
 
         # deducting the stock from the portfolio
-        self.stocks.pop(symbol)
-        self.stock_cumulative_return.pop(symbol)
+        if volume_to_sell == self.stocks[symbol]['volume']:
+            self.stocks.pop(symbol)
+            self.stock_cumulative_return.pop(symbol)
+        else:
+            # the cost of the stock will be deducted from the returns from the sales
+            # but the cost must be at least 0, it cannot be negative
+            self.stocks[symbol]['cost'] = max(0, volume_to_sell * (current_price - trading_fee))
+            self.stocks[symbol]['volume'] -= volume_to_sell
 
         self.num_of_trade+=1
 
@@ -177,6 +212,16 @@ class Strategy:
                 cost = self.stocks[symbol]['cost']
                 volume = self.stocks[symbol]['volume']
 
+                if volume <= 0:
+                    print('Error: volume of ', symbol, ' <= 0')
+
+                    # remove the stock
+                    self.stocks.pop(symbol)
+                    self.stock_cumulative_return.pop(symbol)
+
+                    # stop processing the stock, and go to the next stock
+                    continue
+
                 # get market information
                 mkt_info=self.get_market_info(
                                             current_trading_date=current_trading_date,
@@ -187,6 +232,7 @@ class Strategy:
                 current_price = mkt_info['current_price']
 
                 # check the stop-loss strategy
+                ## cost / volume = cost per the share in the portfolio
                 if current_price < cost / volume * (1 + self.gdict['stop_loss']):
                     # sell the stock
                     self.sell_stock(
@@ -204,7 +250,7 @@ class Strategy:
                                 current_trading_date=current_trading_date,
                                 stock_df=stock_df,
                                 symbol=symbol,
-                                trading_fee=self.trading_fee)
+                                trading_fee=trading_fee)
                     # the stock was sold and removed from portfolio
                     continue
 
@@ -236,6 +282,9 @@ class Strategy:
 
         # update the age of the portfolio
         self.age += 1
+
+        # update reward
+        self.fitness()
 
     # this function perform the rebalancing of portfolio. The rebalancing will reset the portfolio to the target stocks
     # input:
@@ -316,5 +365,25 @@ class Strategy:
                                 trading_fee=trading_fee,
                             )
 
+    # this function calculates the total reward of the portfolio managed with the strategy
+    # change:
+    # 1. self.rewards: update the total rewards of the portfolio managed with the strategy
     def fitness(self):
-        pass
+        # reward 1:
+        # cumulative return
+        reward_cum_return = self.cumulative_return / self.start_up_cash
+
+        # reward 2:
+        # num_of_increase_in_value / age or the win rate
+        reward_win_rate = self.num_of_increase_in_value / self.age
+
+        # penalty 1:
+        # maximum drawdown
+        penalty_max_drawdown = self.max_drawdown / self.start_up_cash
+
+        # rewards
+        self.rewards = float(max(0,
+                           0.4 * reward_cum_return +
+                           0.3 * reward_win_rate +
+                           0.3 * penalty_max_drawdown))
+

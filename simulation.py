@@ -1,6 +1,7 @@
 import api_fin_data
 import pandas as pd
 import numpy as np
+from multiprocessing import Pool
 
 class Simulation:
     def __init__(self, fin_start, fin_end, trading_fee):
@@ -32,14 +33,12 @@ class Simulation:
         # key2 is the timestamp
         key_time=list(data_1mo_before_start_dict[columns[0]].keys())
         if (len(key_time) <40):
-            print('Error: Not enough data for symbol= ', symbol)
             return None
         start_date=pd.Timestamp(key_time[0])
 
         # the data for calculating financial indicators
         data=raw_data.loc[(raw_data.index >= start_date) & (raw_data.index <= pd_end)]
         if (len(key_time) < 1):
-            print('Error: Not enough data for symbol= ', symbol)
             return None
 
         # calculate simple moving average
@@ -113,7 +112,7 @@ class Simulation:
             stock=s.loc[(s.index == date_timestamp)]
 
             # convert to python dict{}
-            stock_dict=stock.to_dict()
+            stock_dict = stock.to_dict()
 
             ## current stock symbol
             symbol=(list(stock_dict.keys())[0][1])
@@ -139,19 +138,105 @@ class Simulation:
                 continue
             else:
                 # getting the signal score, and store the selected stock
-                selected_stocks[symbol]=stock_dict['signal_score', ''][date_timestamp]
+                selected_stocks[symbol] = stock_dict['signal_score', ''][date_timestamp]
 
-        # sorting the selected stocks
+        # sorting the selected stocks, which is a dict{}
         ## turn the scores of selected_stocks into numpy array
-        signal_score_of_selected_stocks=np.array(list(selected_stocks.values()))
-        selected_stock_symbol=np.array(list(selected_stocks.keys()))
+        signal_score_of_selected_stocks = np.array(list(selected_stocks.values()))
+        ## turn the keys of selected_stocks into another numpy array
+        selected_stock_symbol = np.array(list(selected_stocks.keys()))
 
-        ## find the signal score of the stocks of top n signal score. n is the parameter generated from gene
-        max_num_of_stock=st.gdict['max_num_of_stock']
+        ## find the signal score of the stocks of top n signal score. 
+        ## n which is the max_num_of_stock, is the parameter generated from gene.
+        max_num_of_stock = st.gdict['max_num_of_stock']
 
-        top_n_selected_stock_symbol=selected_stock_symbol[np.argsort(a=signal_score_of_selected_stocks, kind='mergesort')[-max_num_of_stock:]]
+        top_n_selected_stock_symbol = selected_stock_symbol[np.argsort(a=signal_score_of_selected_stocks, kind='mergesort')[-max_num_of_stock:]]
 
+        # return a list
         return top_n_selected_stock_symbol.tolist()
+
+    '''
+    def run_creature(self, cr = None, cr_lifetime=2400):
+            try:
+                # initialize or reset the simulation
+                pid = self.physicsClientId
+                p.resetSimulation(physicsClientId=pid)
+                p.setPhysicsEngineParameter(enableFileCaching=0, physicsClientId=pid)
+
+                # load up sandbox and mountain
+                mountain_env = cw_env.MountainEnv(pid)
+                mountain_pos, arena_size = mountain_env.setup_environment()
+
+                # I moved the setGtavity() here after setting up sandbox and mountain
+                p.setGravity(0, 0, -10, physicsClientId=pid)
+
+                # generate a random creature, if no input creature
+                if cr == None:
+                    cr = creature.Creature(gene_count=3)
+                    print('New creature randomly generated because of missing input "cr"!')
+                # convert the creature to XML and save it to URDF file
+                xml_file = 'URDF/cr_' + str(self.sim_id) + '.urdf'
+                xml_str = cr.to_xml()
+                with open(xml_file, 'w') as f:
+                    f.write(xml_str)
+
+                # load the creature URDF file
+                if self.is_handcrafted_urdf:
+                    cid = p.loadURDF('URDF/handcraft/my_rob.urdf', basePosition = self.cr_start_pos, baseOrientation = self.cr_start_ori, physicsClientId=pid)
+                else:
+                    cid = p.loadURDF(xml_file, basePosition = self.cr_start_pos, baseOrientation = self.cr_start_ori, physicsClientId=pid)
+
+                # airdrop the creature
+                p.resetBasePositionAndOrientation(bodyUniqueId=cid, posObj=self.cr_start_pos, ornObj=self.cr_start_ori, physicsClientId=pid)
+
+                # setup the environment (inform the creature the environment parameters)
+                cr.setup_environment(m_pos=mountain_pos, arena_size=arena_size)
+
+                # iterate the creature for its lifetime
+                for frame in range(cr_lifetime):
+                    # go to next step/ next frame of the simulation
+                    p.stepSimulation(physicsClientId=pid)
+
+                    # update the position of the creature
+                    # ignore the first few seconds when the creature was being dropped from the air
+                    if frame > 240 * 3:
+                        pos, orn = p.getBasePositionAndOrientation(cid, physicsClientId=pid)
+                        cr.update_position(pos)
+
+                    # update the distance from the mountain to the creature
+                    # if the distance is less than 0.1, stop the creature
+                    # ignore the first few seconds when the creature was being dropped from the air
+                    if frame > 240 * 3 + 1 and cr.get_distance_from_mountain() < 0.1:
+                        self.motors.update_motors(cid=cid, cr=cr, p=p, pid=pid, isStop=True)
+                    # update motors
+                    elif frame % 24 == 0:
+                        self.motors.update_motors(cid=cid, cr=cr, p=p, pid=pid)
+
+            except Exception as e:
+                print("sim failed cr links: ", len(cr.get_expanded_links()))
+                print(e)
+
+        # I added default value to input arguments
+        def eval_population(self, pop, cr_lifetime):
+            for cr in pop.creatures:
+                self.run_creature(cr=cr, cr_lifetime=cr_lifetime)
+    
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+
+    '''
 
     # calculating the performance of the input strategy
     # input:
@@ -190,7 +275,7 @@ class Simulation:
             ## the first trading date in the financial data
             current_trading_date=pd.Timestamp(self.api.get_nth_date(stocks_df[0], n=count_trading_day))
             
-            print('count_trading_day= ', count_trading_day, ' current_trading_date= ', current_trading_date)
+            # print('count_trading_day= ', count_trading_day, ' current_trading_date= ', current_trading_date)
 
             # rebalancing every st.gdict['num_of_day_rebalance'] trading day (include the first day).
             ## rebalancing means resetting the portfolio to the target
@@ -231,3 +316,178 @@ class Simulation:
 
             # go to next trading day
             count_trading_day += 1
+
+
+    '''
+    def eval_population(self, pop, cr_lifetime):
+        for cr in pop.creatures:
+            self.run_creature(cr=cr, cr_lifetime=cr_lifetime)
+
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+    # for the multi-threads version of simulation
+    # input:
+    # 1. pop: population instance
+    def eval_population(self, pop):
+        for st in pop.strategies:
+            self.run_strategy(st=st)
+
+    '''
+    class ThreadedSim():
+        def __init__(self, pool_size, cr_start_pos, cr_start_ori, is_handcrafted_urdf=False):
+            self.sims = [Simulation(cr_start_pos=cr_start_pos, cr_start_ori=cr_start_ori, sim_id=i, is_handcrafted_urdf=is_handcrafted_urdf) for i in range(pool_size)]
+
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+
+# Multi-threads version of simulation
+# the class ThreadedSim implements the multi-threads operations of the simulation
+# The code was adapted from the mid-term assignment of CM3020 Artificial Intelligence
+# input (when creating the class): 
+# 1. pool size:
+# 2. trading_fee:
+# 3. fin_start:
+# 4. fin_end:
+class ThreadedSim():
+    def __init__(self, 
+        trading_fee,
+        pool_size, 
+        fin_start=None,
+        fin_end=None
+    ):
+        self.sims = [
+            Simulation(
+                trading_fee=trading_fee,
+                fin_start=fin_start,
+                fin_end=fin_end) for i in range(pool_size)
+        ]
+
+    '''
+    @staticmethod
+    def static_run_creature(sim, cr, cr_lifetime):
+        sim.run_creature(cr=cr, cr_lifetime=cr_lifetime)
+        return cr
+    
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+
+    @staticmethod
+    def static_run_strategy(sim, st):
+        sim.run_strategy(st=st)
+        return st
+
+    '''
+    def eval_population(self, pop, cr_lifetime):
+        """
+        pop is a Population object
+        cr_lifetime is frames in pybullet to run for at 240fps
+        """
+        pool_args = [] 
+        start_ind = 0
+        pool_size = len(self.sims)
+        while start_ind < len(pop.creatures):
+            this_pool_args = []
+            for i in range(start_ind, start_ind + pool_size):
+                if i == len(pop.creatures):# the end
+                    break
+                # work out the sim ind
+                sim_ind = i % len(self.sims)
+                this_pool_args.append([
+                            self.sims[sim_ind], 
+                            pop.creatures[i], 
+                            cr_lifetime]   
+                )
+            pool_args.append(this_pool_args)
+            start_ind = start_ind + pool_size
+
+        new_creatures = []
+        for pool_argset in pool_args:
+            with Pool(pool_size) as po:
+                # it works on a copy of the creatures, so receive them
+                creatures = po.starmap(ThreadedSim.static_run_creature, pool_argset)
+                # and now put those creatures back into the main 
+                # self.creatures array
+                new_creatures.extend(creatures)
+        pop.creatures = new_creatures
+
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project.
+    
+    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+
+    def eval_population(self, pop):
+        pool_args = [] 
+        start_ind = 0
+        pool_size = len(self.sims)
+        while start_ind < len(pop.strategies):
+            this_pool_args = []
+            for i in range(start_ind, start_ind + pool_size):
+                if i == len(pop.strategies):# the end
+                    break
+                # work out the sim ind
+                sim_ind = i % len(self.sims)
+                this_pool_args.append([
+                            self.sims[sim_ind], 
+                            pop.strategies[i]]                            
+                )
+            pool_args.append(this_pool_args)
+            start_ind = start_ind + pool_size
+
+        new_strategies = []
+        for pool_argset in pool_args:
+            with Pool(pool_size) as po:
+                # it works on a copy of the strategies, so receive them
+                strategies = po.starmap(ThreadedSim.static_run_strategy, pool_argset)
+                # and now put those strategies back into the main self.strategies array
+                new_strategies.extend(strategies)
+        pop.strategies = new_strategies

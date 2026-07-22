@@ -1,6 +1,9 @@
 # Although some of the code was adapted from my previous assignment, the code was still written following the three laws of test-driven development
 import numpy as np
 import json
+import random
+import copy
+import file_mgt
 
 class Genome:
     '''
@@ -153,7 +156,7 @@ class Genome:
             'max_num_of_stock':{'low_limit': 1, 'up_limit':10},
 
             # number of days to rebalance the portfolio to target portfolio
-            'num_of_day_rebalance':{'low_limit':10, 'up_limit':30},
+            'num_of_day_rebalance':{'low_limit':20, 'up_limit':60},
             }
         return genome_spec
     
@@ -219,8 +222,135 @@ class Genome:
                 gdict[key] = float(gdict[key])
         return gdict
 
+    '''
+    # Single point crossover
+    # I changed the logic of this function
+    ## New genome was made from the first part of g1 and last part of g2 (instead of the last parts of both g1 and g2)
+    # input: 
+    ## 1. DNA of 2 creatures
+    # output: 
+    ## 1. a new dna made with g1 mixing with g2
     @staticmethod
-    def write_to_json(content, filename):
-        to_json_content = json.dumps(content)
-        with open(filename, 'w') as f:
-            f.write(to_json_content)
+    def crossover(g1, g2):
+        # the index of the selected point should be lower than or equal to the shorter g1 and g2
+        # This avoid the index out-of-range error
+        if len(g1) > len(g2):
+            # genereate random an integer in the range [0, len(g2)-1], both inclusive.
+            x = random.randint(0, len(g2)-1)
+            # if the random number equals the length -1 of g2, the whole new gene equals g1
+            if x == len(g2)-1:
+                return g1
+        else:
+            # genereate random an integer in the range [0, len(g1)-1], both inclusive.
+            x = random.randint(0, len(g1)-1)
+            # if the random number equals the length -1 of g1, the whole new gene equals g1
+            if x == len(g1)-1:
+                return g1
+        # if the random number is 0, the whole new gene equals g2
+        if x == 0:
+            return g2
+        return np.concatenate((g1[:x], g2[x:]))
+
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project, with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+
+    # Single point crossover
+    ## New genome was made from the first part of g1 and last part of g2
+    # input: 
+    # 1. DNA of 2 strategies
+    # output: 
+    # 1. a new dna made with g1 mixing with g2
+    @staticmethod
+    def crossover(g1, g2):
+        # the index of the selected point should be lower than or equal to the shorter g1 and g2
+        # This avoid the index out-of-range error
+        if len(g1) > len(g2):
+            # genereate random an integer in the range [0, len(g2)-1], both inclusive.
+            x = random.randint(0, len(g2)-1)
+            # if the random number equals the length -1 of g2, the whole new gene equals g1
+            if x == len(g2)-1:
+                return g1
+        else:
+            # genereate random an integer in the range [0, len(g1)-1], both inclusive.
+            x = random.randint(0, len(g1)-1)
+            # if the random number equals the length -1 of g1, the whole new gene equals g1
+            if x == len(g1)-1:
+                return g1
+        # if the random number is 0, the whole new gene equals g2
+        if x == 0:
+            return g2
+        return np.concatenate((g1[:x], g2[x:]))
+
+    '''
+    # The amount was the value to be added to or subtracted from the existing gene(s)
+    # The Modulus of 1 (mod 1) or (%1) limited the range of new gene(s) to [0, 1), 1 was excluded
+    # input: 
+    ## 1. DNA, 
+    ## 2. the chance to mutate, 
+    ## 3. the amount of the mutation
+    # output:
+    ## 1. DNA (same as input dna or after mutation)
+    @staticmethod
+    def point_mutate(genome, rate=0, amount=0.1):
+        # I changed copy to deepcopy
+        new_genome = copy.deepcopy(genome)
+        for gene in range(len(new_genome)):
+            for g in range(len(new_genome[gene])):
+                if random.random() < rate:
+                    # The value of genes should be from 0 to 1
+                    # Newly randomly generated genes were in the range of [0, 1), 1 was excluded
+                    new_genome[gene][g] = (new_genome[gene][g] + (random.random() * amount * 2 - amount)) % 1
+        return new_genome
+
+    Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
+    Author: The author of this project (Anonoymous submission of assignment)
+    Date: 2026
+    Code version: N/A
+    Availability: Submitted Assignment (Not published)
+    (Week 10 Mid-term coursework of CM3020 Artificial Intelligence, 2026)
+
+    The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
+    All the code was written and prepared by the author of this project, with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
+
+    Reference:
+    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    '''
+    # The amount was the value to be added to or subtracted from the existing gene(s)
+    # The Modulus of 1 (mod 1) or (%1) limited the range of new gene(s) to [0, 1), 1 was excluded
+    # input: 
+    ## 1. DNA, 
+    ## 2. the chance to mutate, 
+    ## 3. the amount of the mutation
+    # output:
+    ## 1. DNA (same as input dna or after mutation)
+    @staticmethod
+    def point_mutate(genome, rate=0, amount=0.1):
+        # I changed copy to deepcopy
+        new_genome = copy.deepcopy(genome)
+        for gene in range(len(new_genome)):
+            if random.random() < rate:
+                # The value of genes should be from 0 to 1
+                # Newly randomly generated genes were in the range of [0, 1), 1 was excluded
+                new_genome[gene] = (new_genome[gene] + (random.random() * amount * 2 - amount)) % 1
+        return new_genome
+
+    # this function makes use of the write_to_json() in file_mgt to write json to file(s)
+    # save the genome spec and other content to JSON
+    @staticmethod
+    def write_to_json(to_json_content, filename):
+        file_mgt.FileMgt.write_to_json(to_json_content=to_json_content, filename=filename)
+
+    @staticmethod
+    def write_dna_to_csv(dna, csv_file):
+        file_mgt.FileMgt.write_list_to_csv(list_content=dna, csv_file_path=csv_file)

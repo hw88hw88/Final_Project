@@ -55,8 +55,6 @@ class APIFinData:
             # For an empty data frame from yfinance, there are 7 elements
             if raw_data is None or int(raw_data.size) < 1:
                 return None
-            if symbol=='ABC':
-                print('size= ', raw_data.size)
 
             # convert the raw data to pickle format and
             # save to pickle file

@@ -61,8 +61,6 @@ class TestAPIFinData(unittest.TestCase):
         self.assertIsNotNone(get_fin_data.get_nth_date(data_msft))
         self.assertIsNotNone(get_fin_data.get_nth_date(data_msft, n=0))
 
-        
-
     # test if variables store correct type of data
     def test_var_type(self):
         get_fin_data=api_fin_data.APIFinData()
@@ -122,4 +120,5 @@ class TestAPIFinData(unittest.TestCase):
         # check if lists created successfully
         self.assertIsNotNone(os.path.exists(downloadable_filename))
         self.assertIsNotNone(os.path.exists(undownloadable_filename))
+
 unittest.main()
