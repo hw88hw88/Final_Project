@@ -6,8 +6,8 @@ import population
 import simulation
 import strategy
 import copy
-import uuid
 import file_mgt
+import api_fin_data
 
 class GA:
     '''
@@ -93,66 +93,92 @@ class GA:
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
     '''
-    # the parameters of the GA, and their default values
+    # initialise the parameters of the GA, and their default values
     def __init__(
         self,
         pool_size,
         start_up_cash,
         trading_fee,
-        pop_size=50,
-        num_of_generations=50,
-        point_mutate_rate=0.1, 
-        point_mutate_amt=0.25,
-        fin_start=None,
-        fin_end=None,
+        fin_start,
+        fin_end,
+        run_id = 0,
+        pop_size = 50,
+        num_of_generations = 50,
+        point_mutate_rate = 0.1, 
+        point_mutate_amt = 0.25,
+
+        # file path:
+        ## mainly for ga
+        gene_spec_filename = 'JSON/test_gene_spec.json',
+        ga_performance_filename = 'JSON/test_ga_performance.json',
+        hyper_parameter_filename = 'JSON/test_hyper_parameter.json',
+
+        ## sharing from ga to validation
+        elite_json_filepath = 'JSON/test_fittest',
+        elite_csv_filepath = 'CSV/test_fittest',
+        
+        num_of_elite = 3,
     ):
-        self.pool_size=pool_size
-        self.fin_start=fin_start
-        self.fin_end=fin_end
-        self.start_up_cash=start_up_cash
-        self.trading_fee=trading_fee
-        self.pop_size=pop_size
-        self.gene_spec_filename='JSON/gene_spec.json'
-        self.ga_performance_filename='JSON/ga_performance.json'
-        self.hyper_parameter_filename = 'JSON/hyper_parameter.json'
-        self.elite_json_filename = 'JSON/fittest'
-        self.elite_csv_filename = 'CSV/fittest'
+        self.pool_size = pool_size
+        self.fin_start = fin_start
+        self.fin_end = fin_end
+        self.start_up_cash = start_up_cash
+        self.trading_fee = trading_fee
+        # pop size should be larger than no. of elites to be selected, when no. of generations is larger than 1.
+        # Otherwise, the results from 2nd generations will be the same as the 1st generation
+        if pop_size <= num_of_elite and num_of_generations > 1:
+            self.pop_size = num_of_elite + 1
+        else:
+            self.pop_size=pop_size
+        self.gene_spec_filename=gene_spec_filename
+        self.ga_performance_filename=ga_performance_filename
+        self.hyper_parameter_filename = hyper_parameter_filename
+        self.elite_json_filepath = elite_json_filepath
+        self.elite_csv_filepath = elite_csv_filepath
 
         # the number of generations
         self.num_of_generations=num_of_generations
         self.point_mutate_rate=point_mutate_rate
         self.point_mutate_amt=point_mutate_amt
 
-        # store the fittest strategies
-        self.fittest_st = []
-
         # number of fittest strategies to be selected to the next generation
         ## e.g. 3 means the 3 fittest strategies of the current and previous generations will be saved 
-        ### to self.fittest_st, 
         ### to JSON file(s), 
         ### to CSV file(s), and
         ### to next generation
-        self.num_of_elite = 3
-
-        # remove old files
-        ## remove the files in JSON folder
-        files = file_mgt.FileMgt.list_files_in_directory('JSON')
-        for file in files:
-            os.remove(file)
-
-        ## remove old elite or fittest CSV files
-        for p in os.listdir(self.elite_csv_filename):
-            os.remove(self.elite_csv_filename + '/' + p)
+        self.num_of_elite = num_of_elite
 
         # run id
         ## to identify the files generated this time
-        self.run_id = str(uuid.uuid4())
+        self.run_id = run_id
+
+        # initialise ga performance file content
+        # preparing the JSON log file at the beginning
+        self.ga_performance_file_content = '{"run_id": "' + str(self.run_id) + '",\n "result":[\n'
+
+    # initialise the running of ga
+    ## the initialisation process that the developer does not want it to run when creating the ga instances, but run at the start of ga process
+    # cleaning the old logs and record in JSON folder, and the old elite CSV files
+    # saving the hyper-parameters, gene spec to JSON files
+    # input: None
+    # output: no returned value
+    # changes:
+    # 1. save hyper-parameter to JSON
+    # 2. save gene spec to JSON
+    def initialise_logs(self):
+        # check if file path exists for saving JSON and CSV
+        if not os.path.exists(self.elite_csv_filepath):
+            os.mkdir(self.elite_csv_filepath)
+
+        if not os.path.exists(self.elite_json_filepath):
+            os.mkdir(self.elite_json_filepath)
 
         # save the hyper-parameters to JSON
         save_hyper_parameter_to_json_content = {
             'run_id': self.run_id,
             'pop_size': self.pop_size,
             'num_of_generations': self.num_of_generations,
+            'num_of_elite': self.num_of_elite,
             'point_mutate_rate': self.point_mutate_rate,
             'point_mutate_amt': self.point_mutate_amt,
             'start_up_cash': self.start_up_cash,
@@ -160,20 +186,26 @@ class GA:
             'fin_end': self.fin_end,
             'trading_fee': self.trading_fee,
             'pool_size': self.pool_size,
+            'gene_spec_filename': self.gene_spec_filename,
+            'ga_performance_filename': self.ga_performance_filename,
+            'hyper_parameter_filename': self.hyper_parameter_filename,
+            'elite_csv_filepath': self.elite_csv_filepath,
+            'elite_json_filepath': self.elite_json_filepath,
         }
-        file_mgt.FileMgt.write_to_json(to_json_content=save_hyper_parameter_to_json_content, filename=self.hyper_parameter_filename)
+        file_mgt.FileMgt.write_to_json(
+            to_json_content=save_hyper_parameter_to_json_content, 
+            filename=self.hyper_parameter_filename)
 
         # save the genome spec to JSON
         gene_spec = genome.Genome.get_gene_spec()
         gene_spec['run_id'] = str(self.run_id)
-        file_mgt.FileMgt.write_to_json(to_json_content=gene_spec, filename=self.gene_spec_filename)
-
-        # store log file content
-        self.ga_performance_file_content = ''
+        file_mgt.FileMgt.write_to_json(
+            to_json_content=gene_spec, 
+            filename=self.gene_spec_filename)
 
     '''
-    # calculating and printing the matrics
-    def matrics(self, pop, generation):
+    # calculating and printing the metrics
+    def metrics(self, pop, generation):
         # the performance of creatures
         max_closeness = []
         links = []
@@ -259,46 +291,88 @@ class GA:
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
     '''
-    # calculating and printing the matrics
+    # calculating and printing the metrics
     # input:
     # 1. generation: number of generations. 1 stands for the first generation
+    # 2. top_n_strategies: a list of the <self.num_of_elite> fittest strategies. This is the output of elitism()
     # output: no returned value
     # change:
-    # 1. add content to ga_performance_file_content
-    # 2. print the matrics and performance
-    def matrics(self, generation):
+    # 1. add performance metrics to <ga_performance_file_content> JSON
+    # 2. print the metrics and performance
+    def metrics(self, generation, top_n_strategies):
         # find the fittest strategy, and log and print its performance
-        rewards = [st.rewards for st in self.fittest_st]
-        best_fit_reward = np.max(rewards)
+        rewards = [st.rewards for st in top_n_strategies]
 
-        for st in self.fittest_st:
-            if st.rewards == best_fit_reward:
-                fittest_st = st
-                break
-
-        # prepare the information to be printed and returned
+        # prepare the information to be logged to file
         log = {
             "generation": str(generation),
-            "max_reward":str(np.round(np.max(rewards), 3)),
-            "min_reward":str(np.round(np.min(rewards), 3)),
+            "max_reward": str(float(np.round(np.max(rewards), 3))),
+            "min_reward": str(float(np.round(np.min(rewards), 3))),
             # the highest reward strategy
-            "fittest gdict": fittest_st.gdict,
+            "fittest_gdict": top_n_strategies[-1].gdict,
             "fin_start": self.fin_start,
             "fin_end": self.fin_end,
-            "fittest return": fittest_st.cumulative_return,
-            "fittest value": fittest_st.total_value,
-            "fittest max drawdown": fittest_st.max_drawdown,
-            "fittest win rate": np.round((fittest_st.num_of_increase_in_value / fittest_st.age), 3),
+            "fittest_rewards_0": float(np.round(top_n_strategies[-1].rewards, 3)),
+            "fittest_return_0": float(np.round(top_n_strategies[-1].cumulative_return, 3)),
+            "fittest_value_0": float(np.round(top_n_strategies[-1].total_value, 3)),
+            "fittest_max_drawdown_0": float(np.round(top_n_strategies[-1].max_drawdown, 3)),
+            "fittest_win_rate_0": float(np.round((top_n_strategies[-1].num_of_increase_in_value / 
+                                                  top_n_strategies[-1].age), 3)),
+            "fittest_sharpe_ratio": float(np.round(top_n_strategies[-1].sharpe_ratio, 3)),
         }
 
-        print(generation,
-            'max_reward: ',str(np.round(np.max(rewards), 3)),
-            'min_reward: ',str(np.round(np.min(rewards), 3)),
-            "fittest return:", fittest_st.cumulative_return,
-            "fittest value:", fittest_st.total_value,
+        # print the performance
+        print('\n', '-' * 20, ' ' * 3, ' Training - Generation:', generation, ' ' * 3, '-' * 20)
+        print(
+            str(generation), 
+            'max_reward:', float(np.round(np.max(rewards), 3)), 
+            ', min_reward:', float(np.round(np.min(rewards), 3)),
+            ', pop_size:', self.pop_size,
+            ', fin_start:', self.fin_start,
+            ', fin_end:', self.fin_end,
+        )
+        print('\n', '-' * 20, ' ' * 3, ' Training - Generation:', generation, ', fittest: 0', ' ' * 3, '-' * 20)
+        print(
+            'fittest_rewards_0:', float(np.round(top_n_strategies[-1].rewards, 3)),
+            ', fittest_return_0:', float(np.round(top_n_strategies[-1].cumulative_return, 3)), 
+            ', fittest_value_0:', float(np.round(top_n_strategies[-1].total_value, 3)),
+            ', fittest_max_drawdown_0:', float(np.round(top_n_strategies[-1].max_drawdown, 3)),
+            ', fittest_win_rate_0:', float(np.round(top_n_strategies[-1].num_of_increase_in_value / 
+                                                  top_n_strategies[-1].age, 3)),
+            ', fittest_sharpe_rate_0:', float(np.round(top_n_strategies[-1].sharpe_ratio, 3)),
             )
 
-        # saving the above information to JSON log file
+        # record all top n fittest strategies to JSON performance file, and print
+        counter = 2
+        while counter <= len(top_n_strategies):
+            print('\n', '-' * 20, ' ' * 3, ' Training - Generation:', generation, ', fittest: ', counter - 1, ' ' * 3, '-' * 20)
+            log['fittest_rewards_' + str(counter - 1)] = float(np.round(top_n_strategies[-counter].rewards, 3))
+            log['fittest_return_' + str(counter - 1)] = float(np.round(top_n_strategies[-counter].cumulative_return, 3))
+            log['fittest_value_' + str(counter - 1)] = float(np.round(top_n_strategies[-counter].total_value, 3))
+            log['fittest_max_drawdown_' + str(counter - 1)] = float(np.round(top_n_strategies[-counter].max_drawdown, 3))
+            log['fittest_win_rate_' + str(counter - 1)] = float(
+                np.round((top_n_strategies[-counter].num_of_increase_in_value / 
+                          top_n_strategies[-counter].age), 3))
+            log['fittest_sharpe_ratio_' + str(counter - 1)] = float(np.round(top_n_strategies[-counter].sharpe_ratio, 3))
+
+            print(
+                'fittest_rewards_' + str(counter - 1) + ':', 
+                float(np.round(top_n_strategies[-counter].rewards, 3)),
+                ', fittest_return_' + str(counter - 1) + ':', 
+                float(np.round(top_n_strategies[-counter].cumulative_return, 3)),
+                ', fittest_value_' + str(counter - 1) + ':', 
+                float(np.round(top_n_strategies[-counter].total_value, 3)),
+                ', fittest_max_drawdown_' + str(counter - 1) + ':', 
+                float(np.round(top_n_strategies[-counter].max_drawdown, 3)),
+                ', fittest_win_rate_' + str(counter - 1) + ':', 
+                float(np.round((top_n_strategies[-counter].num_of_increase_in_value / 
+                                top_n_strategies[-counter].age), 3)),
+                float(np.round(top_n_strategies[-counter].sharpe_ratio, 3)),
+                )
+
+            counter += 1
+
+        # saving the above information to JSON file
         self.ga_performance_file_content += json.dumps(log) + ',\n'
 
     '''
@@ -338,79 +412,49 @@ class GA:
     Reference:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
     '''
-    # saving the fittest strategies to or updating <self.fittest_st>
-    # saving the fittest strategies to CSV and JSON files
+    # saving the <self.num_of_elite> fittest strategies to CSV and JSON files, and return
     # input:
-    # 1. pop: the population instance
+    # 1. pop: the population instances of current generation
     # 2. genereation: the generation number, such as 1 stands for the first generation
-    # output: no returned value
+    # output: 
+    # 1. top_n_st: a list of the instances of the <self.num_of_elite> fittest strategies
+    #    top_n_st is in descending order of the rewards of the strategy
+    # 2. rewards: a list of rewards of the strategies in the population of current generation
     # change:
     # 1. JSON file(s) storing gdict of the <self.num_of_elite> fittest
     # 2. CSV file(s) storing the genome of the <self.num_of_elite> fittest
-    # 3. update the self.fittest_st
     def elitism(self, pop, generation):
         # the performance of strategies in current generation
-        rewards = copy.deepcopy([st.rewards for st in pop.strategies])
+        rewards = [st.rewards for st in pop.strategies]
 
-        # elitism
-        # find the <self.num_of_elite> fittest strategy in population of current generation
-        rewards.sort(reverse = True)
-        fittest_rewards = rewards[: self.num_of_elite]
+        np_rewards = np.array(copy.deepcopy(rewards))
+        np_st = np.array(copy.deepcopy(pop.strategies))
 
-        # store the <self.num_of_elite> fittest strategies in the population of current generation
-        fittest_st = []
-
-        # find the <self.num_of_elite> fittest strategies in the population of current generation
-        for st in pop.strategies:
-            for new_fit in range(len(fittest_rewards)):
-                if st.rewards == fittest_rewards[new_fit]:
-                    # append the <self.num_of_elite> fittest strategies
-                    fittest_st.append(st)
-                    # remove the reward after appending the strategy
-                    ## for speeding up the searching
-                    fittest_rewards.pop(new_fit)
-                    break
-            if len(fittest_st) == self.num_of_elite:
-                break
-
-        # appending all fittest strategies from previous generation
-        for old_st in self.fittest_st:
-            fittest_st.append(old_st)
-
-        # store the rewards of the fittest strategies
-        new_fittest_rewards = [all_st.rewards for all_st in fittest_st]
-
-        # sorting the rewards in descending order
-        new_fittest_rewards.sort(reverse=True)
-
-        # leave the first <self.num_of_elite> fittest
-        new_fittest_rewards = new_fittest_rewards[: self.num_of_elite]
-
-        # store the new fittest strategies
-        new_fittest_st = []
-        # find the <self.num_of_elite> fittest from the new fittest strategies
-        for st in fittest_st:
-            for r in new_fittest_rewards:
-                if st.rewards == r:
-                    new_fittest_st.append(st)
-                    break
-
-        # save the new fittest
-        self.fittest_st = new_fittest_st
+        # sorting the strategy array in descending order of the strategy rewards
+        top_n_st = np_st[np.argsort(a=np_rewards)[-self.num_of_elite:]]
+        top_n_st = top_n_st.tolist()
 
         # saving the fittest to files
-        for st in range(len(new_fittest_st)):
+        counter = len(top_n_st)
+        while counter > 0:
             # saving the fittest DNA to CSV file
-            dna_filename = self.elite_csv_filename + '/elite_' + str(st) + '_gen'+str(generation)+'.csv'
-            gene=copy.deepcopy(new_fittest_st[st].gene)
+            dna_filename = self.elite_csv_filepath + '/elite_gene_gen' + str(generation) + '_' + str(counter - 1) + '.csv'
+            gene=copy.deepcopy(top_n_st[-counter].gene)
             gene=np.append(gene, self.run_id)
-            file_mgt.FileMgt.write_list_to_csv(list_content=gene, csv_file_path=dna_filename)
+            file_mgt.FileMgt.write_dna_to_csv(list_content=gene, csv_file_path=dna_filename)
+
             # saving the fittest gdict to JSON file
-            gdict_filename = self.elite_json_filename + '/elite_' + str(st) + '_gen'+str(generation)+'.json'
-            gdict=copy.deepcopy(new_fittest_st[st].gdict)
+            gdict_filename = self.elite_json_filepath + '/elite_gdict_gen' + str(generation) + '_' + str(counter - 1) + '.json'
+            gdict=copy.deepcopy(top_n_st[-counter].gdict)
             gdict['run_id'] = self.run_id
-            gdict['rewards'] = new_fittest_st[st].rewards
+            gdict['rewards'] = top_n_st[-counter].rewards
+            gdict['fin_start'] = self.fin_start
+            gdict['fin_end'] = self.fin_end
             file_mgt.FileMgt.write_to_json(to_json_content=gdict, filename=gdict_filename)
+
+            counter -= 1
+
+        return top_n_st, rewards
 
     '''
     # the main body and workflow of GA
@@ -446,7 +490,7 @@ class GA:
                 for cr in pop.creatures:
                     sim.run_creature(cr=cr, cr_lifetime=self.cr_lifetime)
 
-            rewards = self.matrics(pop=pop, generation=generation)
+            rewards = self.metrics(pop=pop, generation=generation)
 
             fit_map = population.Population.get_fitness_map(reward=rewards)
             new_creatures = []
@@ -511,6 +555,10 @@ class GA:
     # 3. call fitmap
     # 4. breed new strategies
     def run_ga(self):
+        # initialise the running
+        ## the initialisation process that the developer does not want it to run when creating the ga instances, but run at the start of ga process
+        self.initialise_logs()
+
         pop = population.Population(pop_size=self.pop_size, start_up_cash=self.start_up_cash)
 
         # determine the number of threads based on user input
@@ -521,15 +569,21 @@ class GA:
                 fin_end=self.fin_end,
                 trading_fee=self.trading_fee)
             print('Multi-threads:', self.pool_size)
+
+            # initialise the financial data for multi-threads environment
+            my_api = api_fin_data.APIFinData()
+            symbols = my_api.get_symbol_from_csv(fin_start=self.fin_start)
+
+            # pre-downloading any missing financial data for the running of simulations
+            ## this helps prevent the error(s) of concurrent downloading of financial data in multi-threads environment
+            for s in symbols:
+                my_api.get_financial_data(symbol=s)
         else:
             sim = simulation.Simulation(
                 fin_start=self.fin_start,
                 fin_end=self.fin_end,
                 trading_fee=self.trading_fee)
             print('Single thread')
-
-        # preparing the JSON log file at the beginning
-        self.ga_performance_file_content = '{"run_id": "' + self.run_id + '",\n "result":[\n'
 
         for generation in range(self.num_of_generations):
             if self.pool_size > 1:
@@ -541,24 +595,22 @@ class GA:
                     sim.run_strategy(st=st)
 
             # elitism
-            ## finds the <self.num_of_elite> fittest from current and previous generations
-            new_strategies = self.elitism(
+            ## finds the <self.num_of_elite> fittest
+            top_n_strategies, rewards = self.elitism(
                 pop=pop, 
                 generation=generation)
 
-            # calculating, logging and printing matrics of the fittest strategy
+            # calculating, logging and printing metrics of the fittest strategy
             ## it must be called after the elitism, because the self.elitism finds the fittest from current and previous generations
-            self.matrics(generation=generation)
+            self.metrics(generation=generation, top_n_strategies=top_n_strategies)
 
             # getting the fitmap for breeding
-            fit_map = population.Population.get_fitness_map(reward=[st.rewards for st in pop.strategies])
+            fit_map = population.Population.get_fitness_map(reward=rewards)
 
-            # adding the 3 fittest strategies to the next generation
-            new_strategies = copy.deepcopy(self.fittest_st)
-
-            # the number of newly breeded strategies is the existing number of strategies minus <len(new_strategies)>, because the <len(new_strategies)> fittest strategies were added. The population size remains unchanged.
+            # the number of newly breeded strategies is the existing number of strategies minus <len(top_n_strategies)>, because the <len(top_n_strategies)> fittest strategies will be added to the population. The population size remains unchanged.
             # breeding new strategies
-            for i in range(len(pop.strategies) - len(new_strategies)):
+            new_strategies = []
+            for i in range(len(pop.strategies) - len(top_n_strategies)):
                 p1_ind = population.Population.select_parent(fit_map)
                 p2_ind = population.Population.select_parent(fit_map)
                 p1 = pop.strategies[p1_ind]
@@ -571,12 +623,26 @@ class GA:
 
                 new_strategies.append(new_st)
 
+            # adding the top n fittest strategies to the population for the next generation
+            for st in top_n_strategies:
+                st.reset(start_up_cash=self.start_up_cash)
+                new_strategies.append(st)
 
-            # Assigning the new strategies and the fittest to the population for the next generation
+            # Assigning the new strategies to the population for the next generation
             pop.strategies = new_strategies
 
+        # close the ga performance JSON file
+        self.close_ga_performance_file()
+
+    # closing the JSON file of the ga performance
+    # input: None
+    # output: None
+    # change: saving content to the JSON file of ga performance, and closing it
+    def close_ga_performance_file(self):
         # saving log content to the JSON log file at the end
         self.ga_performance_file_content = self.ga_performance_file_content[:-2]
         self.ga_performance_file_content += '\n]}'
         with open(self.ga_performance_filename, "w") as f:
             f.write(self.ga_performance_file_content)
+
+        

@@ -2,36 +2,62 @@ import os
 import pickle
 import time
 import json
+import file_mgt
 import yfinance as yf
 import pandas as pd
 
 class APIFinData:
     def __init__(self):
         # store the file path of stock code
-        self.stock_symbol_file='CSV/stock_code.csv'
+        self.stock_symbol_file='CSV/S&P 500 Historical Components & Changes (Updated).csv'
         # store the file path of the stock code which the data of the stock was downloadble
         self.stock_symbol_file_downloadable='CSV/downloadable_stock_code.csv'
         # store the log file path
         self.json_filename='JSON/api_log.json'
 
     # this function retrieve the symbols of constituent stocks of the Standard & Poor’s 500 (S&P500) on a specified date from a csv file
-    def get_symbol_from_csv(self):
+    # input:
+    # 1. fin_start: the start date of the financial period (This is the date to determine the list of stocks. The trading date on or after the <fin_start> will be used)
+    # output:
+    # 1. a list of symbols
+    def get_symbol_from_csv(self, fin_start):
         symbol=[]
-        # Some stock code are invalid
-        # During the testing in 'test_all_sp500()' in test_fin_data.py, the stock code was split into 2 lists, i.e. downloadable and undownloadable. If there is a list of downloadable stocks, the list will be used. Otherwise, the original list of stock will be used.
-        if os.path.exists(self.stock_symbol_file_downloadable):
-            filename=self.stock_symbol_file_downloadable
-        else:
-            filename=self.stock_symbol_file
+        # using the long list from github
+        ## Reference: <https://github.com/fja05680/sp500/blob/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv>
+        filename=self.stock_symbol_file
         with open(filename) as f:
             csv_str = f.read()
-            lines = csv_str.split('\n')
-            for line in lines:
-                tickers = line.split(',')
-                for ticker in tickers:
-                    if ticker != '':
-                        symbol.append(str(ticker))
-        return symbol
+        lines = csv_str.split('\n')
+        for line in range(len(lines)):
+            # the first line is the heading
+            if line == 0:
+                continue
+            # remove the character double quotation mark ' " '
+            lines[line] = lines[line].replace('"', '')
+            # remove the character space ' '
+            lines[line] = lines[line].strip()
+            # split the line of content
+            tickers = lines[line].split(',')
+            # tickers[0] is the date of the S&P500 components
+            # skip the line of symbols before the start date of the financial period
+            if (pd.Timestamp(tickers[0]) < pd.Timestamp(fin_start) and 
+                line < len(lines) - 1):
+                continue
+            # split the line of content
+            ## the [line - 1] below means using the tickers just before the start of the financial period
+            tickers = lines[line - 1].split(',')
+            ## if the financial period <fin_start> begins after the last date on the list, use the symbols of the last date on the list
+            if line == len(lines) - 1:
+                tickers = lines[line].split(',')
+            # return the first line of raw data on or after financial period
+            for ticker in range(len(tickers)):
+                # skip the date element
+                if ticker == 0:
+                    continue
+                if tickers[ticker] != '':
+                    symbol.append(str(tickers[ticker]))
+            # return the first line of raw data on or after financial period
+            return symbol
 
     # get the financial data from external API
     ## input:
@@ -39,12 +65,37 @@ class APIFinData:
     ## output:
     ### raw_data: the dataframe from the external API
     def get_financial_data(self, symbol):
+        # check if the symbol has been tried but not downloadable
+        ## reduce the number of requests made to the API
+        undownloadable_filename='CSV/undownloadable_stock_code.csv'
+        fm = file_mgt.FileMgt()
+        undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
+        if symbol in undownloadable_symbols:
+            # return None, if tried but unsuccessful
+            return None
+
         # store the raw data in pickle file for later retrieval
         pickle_filename='pickle/stock_data/'+symbol+'_max.pkl'
         # store the data frame of raw data in csv file, because this is human readable form
         df_csv_filename='CSV/stock_data/'+symbol+'_max.csv'
 
-        # # check if the data was saved in files
+        # check if the folder exists for storing stock data in pickle
+        if not os.path.exists('pickle'):
+            os.mkdir('pickle')
+        if not os.path.exists('pickle/stock_data'):
+            os.mkdir('pickle/stock_data')
+
+        # check if the folder exists for storing stock data in CSV
+        if not os.path.exists('CSV'):
+            os.mkdir('CSV')
+        if not os.path.exists('CSV/stock_data'):
+            os.mkdir('CSV/stock_data')
+
+        # check if the folder exists for storing stock data in JSON
+        if not os.path.exists('JSON'):
+            os.mkdir('JSON')
+
+        ## check if the data was saved in files to reduce the number of requests made to API and save time
         if not os.path.exists(pickle_filename):
             # download the data from external source if not exist
             raw_data = yf.download(symbol, period='max', auto_adjust=True)
@@ -52,9 +103,32 @@ class APIFinData:
             time.sleep(1)
 
             # check if the raw data is empty
-            # For an empty data frame from yfinance, there are 7 elements
+            # record downloadable and undownloadable symbols in CSV files
+            downloadable_filename='CSV/downloadable_stock_code.csv'
+            undownloadable_filename='CSV/undownloadable_stock_code.csv'
+            fm = file_mgt.FileMgt()
             if raw_data is None or int(raw_data.size) < 1:
+                undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
+                if symbol not in undownloadable_symbols:
+                    undownloadable_symbols.append(symbol)
+                    to_csv_str = ''
+                    for sym in undownloadable_symbols:
+                        to_csv_str += str(sym) + ','
+                    fm.write_csv(
+                        csv_file_path=undownloadable_filename,
+                        to_csv_content=to_csv_str,
+                    )
                 return None
+            downloadable_symbols = fm.read_from_csv(downloadable_filename)
+            if symbol not in downloadable_symbols:
+                downloadable_symbols.append(symbol)
+                to_csv_str = ''
+                for sym in downloadable_symbols:
+                    to_csv_str += str(sym) + ','
+                fm.write_csv(
+                    csv_file_path=downloadable_filename,
+                    to_csv_content=to_csv_str,
+                )
 
             # convert the raw data to pickle format and
             # save to pickle file
@@ -67,7 +141,7 @@ class APIFinData:
             # load data from file
             raw_data=self.read_from_pickle_binary_file(filename=pickle_filename)
         return raw_data
-    
+
     # finding the n (default: the first, if n is None) timestamp in the pandas frame from yfinance
     # input: 
     ## 1. df: data frame storing a single stock

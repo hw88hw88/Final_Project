@@ -2,6 +2,13 @@ import os
 import json
 
 class FileMgt:
+    # initialise the folders
+    def __init__(self):
+        if not os.path.exists('JSON'):
+            os.mkdir('JSON')
+
+        if not os.path.exists('CSV'):
+            os.mkdir('CSV')
     # find all files in a directory, including all files in all sub-directories
     # input:
     # 1. directory: a string storing the file path
@@ -19,7 +26,6 @@ class FileMgt:
                     else:
                         list_files(os.path.join(directory, f))
             list_files(directory)
-            files.sort()
             return files
         return None
 
@@ -89,7 +95,7 @@ class FileMgt:
     # output:
     ## 1. write CSV file to disk
     @staticmethod
-    def write_list_to_csv(list_content, csv_file_path):
+    def write_dna_to_csv(list_content, csv_file_path):
         csv_str = ""
         for element in list_content:
             csv_str = csv_str + str(element) + ","
@@ -97,3 +103,69 @@ class FileMgt:
 
         with open(csv_file_path, 'w') as f:
             f.write(csv_str)
+
+    # read content, such as gdict, from JSON fil
+    # input:
+    # 1. filename: a string of file path of a JSON file
+    # output:
+    # 1. return the content from the JSON file, such as a python dict{}
+    @staticmethod
+    def read_json(filename):
+        with open(filename) as f:
+            content = f.read()
+            return json.loads(content)
+
+    # check if a file exists
+    # input:
+    # 1. filename
+    # output:
+    # 1. boolean: True when the file exists, or false
+    @staticmethod
+    def check_file_exist(filename):
+        return os.path.exists(filename)
+
+    # read CSV file for reading DNA or gene
+    # input:
+    # 1. CSV file path
+    # output:
+    # 1. the elements in CSV
+    @staticmethod
+    def read_dna_list_from_csv(csv_file_path):
+        with open(csv_file_path) as f:
+            csv_content = f.read()
+
+        # separate each element
+        csv_content = csv_content.split(',')
+        # remove the '\n' end line symbol at the end of file
+        csv_content[-1] = csv_content[-1][:-1]
+        
+        return csv_content
+
+    # read CSV file (not for DNA)
+    # input:
+    # 1. csv_file_path: file path
+    # output:
+    # 1. a list of elements in the CSV file
+    def read_from_csv(self, csv_file_path):
+        if not self.check_file_exist(filename=csv_file_path):
+            return []
+        with open(csv_file_path) as f:
+            csv_content = f.read()
+        lines = csv_content.split('\n')
+        csv_list = []
+        for line in range(len(lines)):
+            # separate each element
+            lines[line] = csv_content.split(',')
+            for ind in range(len(lines[line])):
+                if lines[line][ind] != '':
+                    csv_list.append(lines[line][ind])        
+        return csv_list
+
+    # write content to CSV file
+    # input:
+    # 1. csv_file_path: file path
+    # 2. to_csv_content: content to be written to CSV file
+    @staticmethod
+    def write_csv(csv_file_path, to_csv_content):
+        with open(csv_file_path, 'w') as f:
+            f.write(to_csv_content)

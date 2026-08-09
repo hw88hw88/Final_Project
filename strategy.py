@@ -1,23 +1,30 @@
 import genome
 import numpy as np
+import pandas as pd
 
 class Strategy:
     # initialise the instance
     # input:
     # 1. start_up_cash: the start up amount of capital
-    def __init__(self, start_up_cash, gene=None):
+    # 2. (optional) gene: the gene of a strategy
+    # 3. (optional) spec: the spec of a strategy
+    # 4. (optional) gdict: the gdict of a strategy
+    def __init__(self, start_up_cash, gene=None, spec=None, gdict=None):
         # the configuration or structure of the strategy
-        spec=genome.Genome.get_gene_spec()
+        if spec is None:
+            spec=genome.Genome.get_gene_spec()
         self.spec=spec
-        
+
         if gene is None:
             gene=genome.Genome.get_random_gene(len(spec))
         self.gene=gene
 
-        self.gdict=genome.Genome.get_gdict(
-            gene=gene,
-            spec=spec
-        )
+        if gdict is None:
+            gdict=genome.Genome.get_gdict(
+                gene=gene,
+                spec=spec
+            )
+        self.gdict = gdict
         
         self.reset(start_up_cash=start_up_cash)
 
@@ -28,8 +35,13 @@ class Strategy:
         # record the performance
         self.rewards=0
         self.cumulative_return=0
+        # the structure of <self.stocks{}> :
         # stocks[symbol]['cost'], stocks[symbol]['volume'], stocks[symbol]['date']
+        ## <symbol> can be 'MSFT', 'AAPL' and so on.
         self.stocks={}
+        # the structure of <self.stock_cumulative_return{}>:
+        # self.stock_cumulative_return{symbol: return}
+        ## For example, self.stock_cumulative_return{'MSFT': 0.1}
         self.stock_cumulative_return={}
         self.max_drawdown=0
         self.num_of_increase_in_value=0
@@ -43,6 +55,8 @@ class Strategy:
         self.high_value=self.cash
         self.low_value=self.cash
         self.total_value_sequence=[]
+
+        self.sharpe_ratio=0
 
     # retrieve the market price and volume from the input data
     # input:
@@ -77,12 +91,14 @@ class Strategy:
     # 2. add to self.stocks{} the volume, date, cost of the newly bought shares
     # 3. add self.num_of_trade by 1
     # 4. add the symbol to self.stock_cumulative_return[symbol]
-    def buy_stock(self, 
-                  current_trading_date, 
-                  stock_df, 
-                  current_target_portfolio, 
-                  symbol,
-                  trading_fee):
+    def buy_stock(
+            self, 
+            current_trading_date, 
+            stock_df, 
+            current_target_portfolio, 
+            symbol,
+            trading_fee
+        ):
         # get market information
         mkt_info=self.get_market_info(current_trading_date=current_trading_date,
                                       stock_df=stock_df,
@@ -94,6 +110,8 @@ class Strategy:
         target_num_of_stocks = len(current_target_portfolio)
 
         target_value = int(np.floor(self.cash / target_num_of_stocks))
+        # target volume must be an integer
+        # buyers cannot buy less than 1 share, and sellers cannot sell less than 1 share
         target_volume = int(np.floor(target_value / (current_price + trading_fee)))
 
         ### check if the volume is larger than market volume (very rarely)
@@ -124,7 +142,7 @@ class Strategy:
         ## add number of trade
         self.num_of_trade+=1
         ## add the cumulative return for each stock
-        self.stock_cumulative_return[symbol]=0
+        self.stock_cumulative_return[symbol]=0.0
 
     # a function to remove a stock from the portfolio
     # input:
@@ -136,11 +154,13 @@ class Strategy:
     # 1. add the cash (receiving money by selling the stock)
     # 2. remove the stock from portfolio
     # 3. add number of trades
-    def sell_stock(self,
-                  current_trading_date,
-                  stock_df,
-                  symbol,
-                  trading_fee):
+    def sell_stock(
+            self,
+            current_trading_date,
+            stock_df,
+            symbol,
+            trading_fee
+        ):
 
         # get market information
         mkt_info=self.get_market_info(current_trading_date=current_trading_date,
@@ -174,6 +194,45 @@ class Strategy:
 
         self.num_of_trade+=1
 
+    # calculate the maximum drawdown
+    # input: value_sequence: a list of value, such as <self.total_value_sequence>
+    # output: return the maximum drawdown
+    @staticmethod
+    def calculate_max_drawdown(value_sequence):
+        max_peak = float('-inf')
+        max_drawdown = 0.0
+        
+        for price in value_sequence:
+            # the record high
+            max_peak = max(price, max_peak)
+
+            # the maximum drawdown up to the current element in <self.total_value_sequence>
+            drawdown = (price - max_peak) / max_peak
+            
+            # the maximum drawdown of the drawdown up to current element in <self.total_value_sequence
+            max_drawdown = min(drawdown, max_drawdown)
+                
+        return max_drawdown
+
+    # calculate the Sharpe ratio
+    # input:
+    # 1. value_list: a list of the total value sequence of the portfolio
+    # 2. risk_free_interest_rate: the risk free interest rate
+    # output:
+    # 1. Sharpe ratio
+    @staticmethod
+    def calculate_sharpe_ratio(value_list, risk_free_interest_rate = 0.03):
+        series = pd.Series(value_list)
+
+        daily_return = series.pct_change().dropna()
+
+        annualized_return = daily_return.mean() * 252
+        annualized_volatility = daily_return.std() * np.sqrt(252)
+
+        sharpe_ratio = (annualized_return - risk_free_interest_rate) / annualized_volatility
+
+        return sharpe_ratio
+
     # update the value of the stock and portfolio
     # input:
     # 1. stocks_df[]: a list of the pandas dataframe of all available stocks
@@ -187,11 +246,12 @@ class Strategy:
     # 5. update self.total_value, which is the total value of the portfolio
     # 6. update self.num_of_increase_in_value, which is the number of times the value of the portfolio increase
     # 7. update self.max_drawdown, which is the highest
-    def daily_update(self, 
-                     stocks_df,
-                     current_trading_date,
-                     trading_fee
-                     ):
+    def daily_update(
+            self, 
+            stocks_df,
+            current_trading_date,
+            trading_fee
+        ):
         # initialise the new total value of portfolio
         new_portfolio_value = 0
 
@@ -224,10 +284,10 @@ class Strategy:
 
                 # get market information
                 mkt_info=self.get_market_info(
-                                            current_trading_date=current_trading_date,
-                                            stock_df=stock_df,
-                                            symbol=symbol
-                                            )
+                    current_trading_date=current_trading_date,
+                    stock_df=stock_df,
+                    symbol=symbol
+                )
 
                 current_price = mkt_info['current_price']
 
@@ -236,10 +296,11 @@ class Strategy:
                 if current_price < cost / volume * (1 + self.gdict['stop_loss']):
                     # sell the stock
                     self.sell_stock(
-                                current_trading_date=current_trading_date,
-                                stock_df=stock_df,
-                                symbol=symbol,
-                                trading_fee=trading_fee)
+                        current_trading_date=current_trading_date,
+                        stock_df=stock_df,
+                        symbol=symbol,
+                        trading_fee=trading_fee
+                    )
                     # the stock was sold and removed from portfolio
                     continue
 
@@ -255,7 +316,7 @@ class Strategy:
                     continue
 
                 # update the stock_cumulative_return
-                self.stock_cumulative_return[symbol] = volume * current_price - cost
+                self.stock_cumulative_return[symbol] = float((volume * current_price) - cost)
 
                 # adding to portfolio value
                 new_portfolio_value += volume * current_price
@@ -274,11 +335,13 @@ class Strategy:
         self.total_value_sequence.append(self.total_value)
 
         # update maximum drawdown of the portfolio
-        portfolio_value_peak = np.maximum.accumulate(self.total_value_sequence)
-        drawdown = (self.total_value - portfolio_value_peak) / portfolio_value_peak
-        self.max_drawdown = max(drawdown)
+        self.max_drawdown = self.calculate_max_drawdown(self.total_value_sequence)
 
+        # update the cumulative return
         self.cumulative_return = self.total_value - self.start_up_cash
+
+        # calculate Sharpe ratio
+        self.sharpe_ratio = self.calculate_sharpe_ratio(value_list=self.total_value_sequence)
 
         # update the age of the portfolio
         self.age += 1
@@ -377,13 +440,23 @@ class Strategy:
         # num_of_increase_in_value / age or the win rate
         reward_win_rate = self.num_of_increase_in_value / self.age
 
+        # reward 3:
+        # Sharpe ratio
+        reward_sharpe_ratio = self.sharpe_ratio
+
         # penalty 1:
-        # maximum drawdown
-        penalty_max_drawdown = self.max_drawdown / self.start_up_cash
+        # the range of maximum drawdown <self.max_drawdown> is [-1, 0]
+        penalty_max_drawdown = self.max_drawdown * (-1)
+
+        # penalty 2:
+        # no. of trade <= self.age
+        penalty_num_of_trade = self.num_of_trade / self.age
 
         # rewards
         self.rewards = float(max(0,
-                           0.4 * reward_cum_return +
-                           0.3 * reward_win_rate +
-                           0.3 * penalty_max_drawdown))
+                           0.45 * reward_cum_return
+                           + 0.05 * reward_win_rate
+                           + 0.5 * reward_sharpe_ratio
+                           - 0.05 * penalty_num_of_trade
+                           - 0.3 * penalty_max_drawdown))
 

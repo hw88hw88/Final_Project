@@ -4,6 +4,11 @@ import numpy as np
 from multiprocessing import Pool
 
 class Simulation:
+    # the setup of the simulation
+    # input:
+    # 1. fin_start: the date of the start of the period
+    # 2. fin_end: the date of the end of the period
+    # 3. trading_fee: the percentage of the trading fee. For example, 0.01 means 1% of the trading amount
     def __init__(self, fin_start, fin_end, trading_fee):
         self.api=api_fin_data.APIFinData()
         self.fin_start=fin_start
@@ -11,28 +16,32 @@ class Simulation:
         self.trading_fee=trading_fee
 
     # calculate the financial indicators for stock
-    ## input:
-    ### 1. st: strategy
-    ### 2. symbol: the stock code
-    ## output:
-    ### 1. pandas data frame storing the financial data and indicators of the stock
+    # input:
+    # 1. st: strategy
+    # 2. symbol: the stock code
+    # output:
+    # 1. pandas data frame storing the financial data and indicators of the stock
     def calculate_fin_indicator_for_stock(self, st, symbol):
         # retrieve the data from API or saved file
         raw_data=self.api.get_financial_data(symbol=symbol)
+        if raw_data is None:
+            return None
 
         # retrieve the data within the period
         pd_start=pd.Timestamp(self.fin_start)
         pd_end=pd.Timestamp(self.fin_end)
 
-        # data 40 days before the start of the period for calculating financial indicators
-        data_1mo_before_start=raw_data.loc[(raw_data.index <= pd_start)].tail(40)
-        data_1mo_before_start_dict=data_1mo_before_start.to_dict()
+        # data 250 days before the start of the period for calculating financial indicators
+        ## since the <ma_long> in gdict can be 250
+        days_before_start = 250
+        data_before_start=raw_data.loc[(raw_data.index <= pd_start)].tail(days_before_start)
+        data_before_start_dict=data_before_start.to_dict()
 
         # key is the column name
-        columns=list(data_1mo_before_start_dict.keys())
+        columns=list(data_before_start_dict.keys())
         # key2 is the timestamp
-        key_time=list(data_1mo_before_start_dict[columns[0]].keys())
-        if (len(key_time) <40):
+        key_time=list(data_before_start_dict[columns[0]].keys())
+        if (len(key_time) < days_before_start):
             return None
         start_date=pd.Timestamp(key_time[0])
 
@@ -97,11 +106,11 @@ class Simulation:
 
     # sorting the available stocks on a specified data
     # input:
-    ## 1. date_timestamp: store date of the current round in the format of pandas timestamp
-    ## 2. stocks_df[]: a list of the pandas dataframe of all available stocks
-    ## 3. st: the strategy
+    # 1. date_timestamp: store date of the current round in the format of pandas timestamp
+    # 2. stocks_df[]: a list of the pandas dataframe of all available stocks
+    # 3. st: the strategy
     # output:
-    ## 1. numpy array storing the symbol of the selected stocks
+    # 1. numpy array storing the symbol of the selected stocks
     def sorting_stocks(self, date_timestamp, stocks_df, st):
         # store the selected stocks
         selected_stocks={}
@@ -150,7 +159,7 @@ class Simulation:
         ## n which is the max_num_of_stock, is the parameter generated from gene.
         max_num_of_stock = st.gdict['max_num_of_stock']
 
-        top_n_selected_stock_symbol = selected_stock_symbol[np.argsort(a=signal_score_of_selected_stocks, kind='mergesort')[-max_num_of_stock:]]
+        top_n_selected_stock_symbol = selected_stock_symbol[np.argsort(a=signal_score_of_selected_stocks)[-max_num_of_stock:]]
 
         # return a list
         return top_n_selected_stock_symbol.tolist()
@@ -238,17 +247,18 @@ class Simulation:
 
     '''
 
-    # calculating the performance of the input strategy
+    # run the simulation of the investment
     # input:
-    ## 1. st: an investment strategy
+    # 1. st: an investment strategy object
     # change:
-    ## 1. 
+    # 1. run the simulation of the investment
+    # 2. call other methods to print the result on screen, and save the result to JSON and CSV files
     def run_strategy(self, st):
         # store the market data and the calculation of the financial indicators of each stock. The financial indicators were calculated based on the parameters in the strategy
         stocks_df=[]
 
         # get the symbol of available stocks in S&P500
-        available_symbols=self.api.get_symbol_from_csv()
+        available_symbols=self.api.get_symbol_from_csv(fin_start=self.fin_start)
 
         # calculating the financial indicators of each stock with the parameters in the strategy
         ## get the financial data and indicators
@@ -274,8 +284,6 @@ class Simulation:
             # finding the nearest trading day on or after the current date
             ## the first trading date in the financial data
             current_trading_date=pd.Timestamp(self.api.get_nth_date(stocks_df[0], n=count_trading_day))
-            
-            # print('count_trading_day= ', count_trading_day, ' current_trading_date= ', current_trading_date)
 
             # rebalancing every st.gdict['num_of_day_rebalance'] trading day (include the first day).
             ## rebalancing means resetting the portfolio to the target

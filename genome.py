@@ -1,6 +1,5 @@
 # Although some of the code was adapted from my previous assignment, the code was still written following the three laws of test-driven development
 import numpy as np
-import json
 import random
 import copy
 import file_mgt
@@ -130,19 +129,19 @@ class Genome:
 
             ## simple moving average:
             ### the range of short window of simple moving average
-            'ma_short':{'low_limit': 5, 'up_limit': 15},
+            'ma_short':{'low_limit': 10, 'up_limit': 50},
             ### the range of long window of simple moving average
-            'ma_long':{'low_limit': 20, 'up_limit': 30},
+            'ma_long':{'low_limit': 80, 'up_limit': 250},
             ### the weight of simple moving average
             'ma_weight':{'low_limit': 1, 'up_limit': 9},
 
             ## RSI
             ### no. of days of RSI
-            'rsi_period': {'low_limit': 10, 'up_limit':20},
+            'rsi_period': {'low_limit': 7, 'up_limit':21},
             ### buy the shares at RSI below 'buy_rsi'
-            'buy_rsi': {'low_limit': 1, 'up_limit':30},
+            'buy_rsi': {'low_limit': 10, 'up_limit':30},
             ### sell the shares at RSI above 'sell_rsi'
-            'sell_rsi': {'low_limit': 70, 'up_limit':99},
+            'sell_rsi': {'low_limit': 70, 'up_limit':90},
             ### the weight of RSI
             'rsi_weight':{'low_limit': 1, 'up_limit': 9},
 
@@ -153,10 +152,10 @@ class Genome:
             'take_profit': {'low_limit': 0.05, 'up_limit':2.0},
 
             # maximum no. of stocks in the investment portfolio
-            'max_num_of_stock':{'low_limit': 1, 'up_limit':10},
+            'max_num_of_stock':{'low_limit': 1, 'up_limit': 5},
 
             # number of days to rebalance the portfolio to target portfolio
-            'num_of_day_rebalance':{'low_limit':20, 'up_limit':60},
+            'num_of_day_rebalance':{'low_limit': 20, 'up_limit':60},
             }
         return genome_spec
     
@@ -345,12 +344,3 @@ class Genome:
                 new_genome[gene] = (new_genome[gene] + (random.random() * amount * 2 - amount)) % 1
         return new_genome
 
-    # this function makes use of the write_to_json() in file_mgt to write json to file(s)
-    # save the genome spec and other content to JSON
-    @staticmethod
-    def write_to_json(to_json_content, filename):
-        file_mgt.FileMgt.write_to_json(to_json_content=to_json_content, filename=filename)
-
-    @staticmethod
-    def write_dna_to_csv(dna, csv_file):
-        file_mgt.FileMgt.write_list_to_csv(list_content=dna, csv_file_path=csv_file)
