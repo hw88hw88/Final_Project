@@ -21,7 +21,7 @@ class Simulation:
     # 2. symbol: the stock code
     # output:
     # 1. pandas data frame storing the financial data and indicators of the stock
-    def calculate_fin_indicator_for_stock(self, st, symbol):
+    def calculate_fin_indicator_for_stock(self, st, symbol, risk_free_interest_rate = 0.03):
         # retrieve the data from API or saved file
         raw_data=self.api.get_financial_data(symbol=symbol)
         if raw_data is None:
@@ -45,7 +45,7 @@ class Simulation:
             return None
         start_date=pd.Timestamp(key_time[0])
 
-        # the data for calculating financial indicators
+        # the data for calculating financial indicators for the selected period
         data=raw_data.loc[(raw_data.index >= start_date) & (raw_data.index <= pd_end)]
         if (len(key_time) < 1):
             return None
@@ -57,6 +57,7 @@ class Simulation:
 
         # calculate RSI
         ## the shift of 1 row of closing price prevents look ahead bias
+        ### the difference of amount (not percentage here)
         daily_returns=data['Close'].shift(periods=1, axis=0).diff()
         rsi_window=st.gdict['rsi_period']
 
@@ -96,7 +97,18 @@ class Simulation:
         # score for the stock
         data['signal_score']=buy_signal-sell_signal
 
-        data['daily_returns']=data['Close'].pct_change()
+        ## the shift of 1 row of closing price prevents look ahead bias
+        data['daily_returns']=data['Close'].shift(periods=1, axis=0).pct_change()
+
+        # calculating the Sharpe ratio for the stock
+
+        # the number of trading days in a year is about 252 days
+        ## Reference: https://www.stockgro.club/blogs/trading/how-many-trading-days-in-a-year/
+        data['annualized_return'] = data['daily_returns'].mean() * 252
+        data['annualized_volatility'] = data['daily_returns'].std() * np.sqrt(252)
+
+        # calculating sharpe ratio
+        data['sharpe_ratio'] = (data['annualized_return'] - risk_free_interest_rate) / data['annualized_volatility']
 
         # leave the data for the period only (removing the rows before the period, after calculating the financial indicators for the period)
         data=data.loc[(data.index >= pd_start) & (data.index <= pd_end)]
@@ -117,7 +129,7 @@ class Simulation:
 
         # iterate the stocks to select the stocks and their signal score
         for s in stocks_df:
-            # select the current period
+            # select the current trading day (a day)
             stock=s.loc[(s.index == date_timestamp)]
 
             # convert to python dict{}
@@ -146,12 +158,12 @@ class Simulation:
             if stock_dict['signal_score', ''][date_timestamp] <= 0:
                 continue
             else:
-                # getting the signal score, and store the selected stock
-                selected_stocks[symbol] = stock_dict['signal_score', ''][date_timestamp]
+                # getting the sharpe ratio of the stock, and store the selected stock
+                selected_stocks[symbol] = stock_dict['sharpe_ratio', ''][date_timestamp]
 
-        # sorting the selected stocks, which is a dict{}
+        # sorting the selected stocks, which is a dict{}, according to Sharpe ratio
         ## turn the scores of selected_stocks into numpy array
-        signal_score_of_selected_stocks = np.array(list(selected_stocks.values()))
+        sharpe_ratio_of_selected_stocks = np.array(list(selected_stocks.values()))
         ## turn the keys of selected_stocks into another numpy array
         selected_stock_symbol = np.array(list(selected_stocks.keys()))
 
@@ -159,7 +171,7 @@ class Simulation:
         ## n which is the max_num_of_stock, is the parameter generated from gene.
         max_num_of_stock = st.gdict['max_num_of_stock']
 
-        top_n_selected_stock_symbol = selected_stock_symbol[np.argsort(a=signal_score_of_selected_stocks)[-max_num_of_stock:]]
+        top_n_selected_stock_symbol = selected_stock_symbol[np.argsort(a=sharpe_ratio_of_selected_stocks)[-max_num_of_stock:]]
 
         # return a list
         return top_n_selected_stock_symbol.tolist()
