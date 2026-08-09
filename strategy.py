@@ -107,7 +107,10 @@ class Strategy:
         market_volume = mkt_info['market_volume']
 
         ## the value and volume to be bought
-        target_num_of_stocks = len(current_target_portfolio)
+        ### the less of available stocks and maximum number of stocks allowed by the gdict of the strategy
+        target_num_of_stocks = min(len(current_target_portfolio), self.gdict['max_num_of_stock'])
+        ## target number >= 1
+        target_num_of_stocks = max(target_num_of_stocks, 1)
 
         target_value = int(np.floor(self.cash / target_num_of_stocks))
         # target volume must be an integer
@@ -222,13 +225,19 @@ class Strategy:
     # 1. Sharpe ratio
     @staticmethod
     def calculate_sharpe_ratio(value_list, risk_free_interest_rate = 0.03):
+
+        # using pandas series
         series = pd.Series(value_list)
 
+        # calculating the daily returns
         daily_return = series.pct_change().dropna()
 
+        # the number of trading days in a year is about 252 days
+        ## Reference: https://www.stockgro.club/blogs/trading/how-many-trading-days-in-a-year/
         annualized_return = daily_return.mean() * 252
         annualized_volatility = daily_return.std() * np.sqrt(252)
 
+        # calculating sharpe ratio
         sharpe_ratio = (annualized_return - risk_free_interest_rate) / annualized_volatility
 
         return sharpe_ratio
@@ -459,4 +468,15 @@ class Strategy:
                            + 0.5 * reward_sharpe_ratio
                            - 0.05 * penalty_num_of_trade
                            - 0.3 * penalty_max_drawdown))
+
+        # heavy penalty:
+        # penalty 3:
+        ## rewards would be 0 if the portfolio made a loss
+        if self.cumulative_return < 0:
+            self.rewards = 0
+
+        # penalty 4:
+        ## Sharpe ratio below 1 means poor performance, and the strategy is likely bad
+        if self.sharpe_ratio < 1:
+            self.rewards = 0
 
