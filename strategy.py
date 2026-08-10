@@ -112,6 +112,10 @@ class Strategy:
         ## target number >= 1
         target_num_of_stocks = max(target_num_of_stocks, 1)
 
+        # check if the target number of stocks is 0
+        if target_num_of_stocks <= 0:
+            return
+
         target_value = int(np.floor(self.cash / target_num_of_stocks))
         # target volume must be an integer
         # buyers cannot buy less than 1 share, and sellers cannot sell less than 1 share
