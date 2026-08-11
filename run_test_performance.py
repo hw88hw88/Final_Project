@@ -4,7 +4,11 @@ import os
 
 # initialise hyper-parameters
 run_id_file_path = 'CSV/run_id.csv'
+## the number of run_id in the CSV file
+### 0 means the first run_id, 1 means the second
 num_of_run = 0
+
+## the testing period
 testing_fin_start = '2025-01-01'
 testing_fin_end = '2025-12-31'
 
@@ -76,6 +80,7 @@ if fm.check_file_exist(run_id_file_path):
     
                 ## for testing
                 validation_hyper_parameter_filename = test_file_path + '/testing_hyper_parameter.json',
+                is_testing=True
         )
     
         # run validation for the fittest strategy in each generation

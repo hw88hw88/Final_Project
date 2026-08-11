@@ -20,14 +20,18 @@ class Validation:
 
         # file path:
         ## mainly for ga
-        gene_spec_filename = 'JSON/test_gene_spec.json',
+        gene_spec_filename = 'JSON/unittest_gene_spec.json',
 
         ## sharing from ga to validation
-        elite_json_filepath = 'JSON/test_fittest',
-        elite_csv_filepath = 'CSV/test_fittest',
+        elite_json_filepath = 'JSON/unittest_fittest',
+        elite_csv_filepath = 'CSV/unittest_fittest',
 
         ## for validation
-        validation_hyper_parameter_filename = 'JSON/validation_hyper_parameter.json',
+        validation_hyper_parameter_filename = 'JSON/unittest_validation_hyper_parameter.json',
+
+        ## showing validation or testing on screen and in JSON file records
+        ### Default: False
+        is_testing = False
         ):
 
         # initialise file paths
@@ -50,6 +54,8 @@ class Validation:
         self.start_up_cash = start_up_cash
 
         self.run_id = run_id
+
+        self.is_testing = is_testing
 
     # import strategy
     # input:
@@ -175,17 +181,24 @@ class Validation:
             st_generation, 
             st_num
         ):
+
+        showing_task = 'validation'
+        if self.is_testing:
+            showing_task = 'testing'
+
         # prepare the information to be saved to JSON file
         validation_performance_log = {
-            "validation_reward": np.round(float(st.rewards), 3),
-            "validation_fin_start": self.val_fin_start,
-            "validation_fin_end": self.val_fin_end,
-            "validation_return": np.round(float(st.cumulative_return), 3),
-            "validation_total_value": np.round(float(st.total_value), 3),
-            "validation_max_drawdown": np.round(float(st.max_drawdown), 3),
-            "validation_win_rate": float(np.round((st.num_of_increase_in_value / st.age), 3)),
-            "validation_sharpe_ratio": float(np.round(st.sharpe_ratio, 3)),
-            "validation_gdict": st.gdict,
+            str(showing_task)+"_reward": np.round(float(st.rewards), 3),
+            str(showing_task)+"_fin_start": self.val_fin_start,
+            str(showing_task)+"_fin_end": self.val_fin_end,
+            str(showing_task)+"_return": np.round(float(st.cumulative_return), 3),
+            str(showing_task)+"_total_value": np.round(float(st.total_value), 3),
+            str(showing_task)+"_max_drawdown": np.round(float(st.max_drawdown), 3),
+            str(showing_task)+"_win_rate": float(np.round((st.num_of_increase_in_value / st.age), 3)),
+            str(showing_task)+"_sharpe_ratio": float(np.round(st.sharpe_ratio, 3)),
+            str(showing_task)+"_gdict": st.gdict,
+            "strategy_generation": st_generation,
+            "strategy_num": st_num,
             "run_id": self.run_id,
         }
 
@@ -197,28 +210,25 @@ class Validation:
         # print the performance
         print('\n', '-' * 10, ' ' * 5, ' Validation - generation: ', st_generation, ', fittest: ', st_num, ' ' * 5, '-' * 10)
         print(
-            'validation_fin_start: ', self.val_fin_start,
-            ', validation_fin_end: ', self.val_fin_end,
-            ', validation_reward: ', np.round(float(st.rewards), 3),
-            ', validation_return: ', np.round(float(st.cumulative_return), 3),
-            ', validation_total_value: ', np.round(float(st.total_value),3),
-            ', validation_max_drawdown: ', np.round(float(st.max_drawdown),3),
-            ', validation_win_rate: ', float(np.round((st.num_of_increase_in_value / st.age), 3)),
-            ', validation_sharpe_ratio: ', float(np.round(st.sharpe_ratio, 3)),
+            str(showing_task)+'_fin_start: ', self.val_fin_start,
+            ', ' + str(showing_task) + '_fin_end: ', self.val_fin_end,
+            ', ' + str(showing_task) + '_reward: ', np.round(float(st.rewards), 3),
+            ', ' + str(showing_task) + '_return: ', np.round(float(st.cumulative_return), 3),
+            ', ' + str(showing_task) + '_total_value: ', np.round(float(st.total_value),3),
+            ', ' + str(showing_task) + '_max_drawdown: ', np.round(float(st.max_drawdown),3),
+            ', ' + str(showing_task) + '_win_rate: ', float(np.round((st.num_of_increase_in_value / st.age), 3)),
+            ', ' + str(showing_task) + '_sharpe_ratio: ', float(np.round(st.sharpe_ratio, 3)),
             )
 
         # saving the hyper-parameters of the validation
         validation_hyper_parameter = {
             "run_id": self.run_id,
 
-            "validation_fin_start": self.val_fin_start,
-            "validation_fin_end": self.val_fin_end,
+            str(showing_task)+"_fin_start": self.val_fin_start,
+            str(showing_task)+"_fin_end": self.val_fin_end,
 
             "start_up_cash": self.start_up_cash,
             "trading_fee": self.trading_fee,
-
-            "strategy_generation": st_generation,
-            "strategy_num": st_num,
         }
 
         # saving the hyper-parameters to JSON

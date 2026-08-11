@@ -12,8 +12,6 @@ class APIFinData:
         self.stock_symbol_file='CSV/S&P 500 Historical Components & Changes (Updated).csv'
         # store the file path of the stock code which the data of the stock was downloadble
         self.stock_symbol_file_downloadable='CSV/downloadable_stock_code.csv'
-        # store the log file path
-        self.json_filename='JSON/api_log.json'
 
     # this function retrieve the symbols of constituent stocks of the Standard & Poor’s 500 (S&P500) on a specified date from a csv file
     # input:
@@ -22,7 +20,7 @@ class APIFinData:
     # 1. a list of symbols
     def get_symbol_from_csv(self, fin_start):
         symbol=[]
-        # using the long list from github
+        # using the list of symbols of S&P500 stocks from github
         ## Reference: <https://github.com/fja05680/sp500/blob/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv>
         filename=self.stock_symbol_file
         with open(filename) as f:
@@ -69,10 +67,11 @@ class APIFinData:
         ## reduce the number of requests made to the API
         undownloadable_filename='CSV/undownloadable_stock_code.csv'
         fm = file_mgt.FileMgt()
-        undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
-        if symbol in undownloadable_symbols:
-            # return None, if tried but unsuccessful
-            return None
+        if fm.check_file_exist(undownloadable_filename):
+            undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
+            if symbol in undownloadable_symbols:
+                # return None, if tried downloading but unsuccessful
+                return None
 
         # store the raw data in pickle file for later retrieval
         pickle_filename='pickle/stock_data/'+symbol+'_max.pkl'
@@ -105,10 +104,11 @@ class APIFinData:
             # check if the raw data is empty
             # record downloadable and undownloadable symbols in CSV files
             downloadable_filename='CSV/downloadable_stock_code.csv'
-            undownloadable_filename='CSV/undownloadable_stock_code.csv'
-            fm = file_mgt.FileMgt()
             if raw_data is None or int(raw_data.size) < 1:
-                undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
+                if fm.check_file_exist(undownloadable_filename):
+                    undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
+                else:
+                    undownloadable_symbols = []
                 if symbol not in undownloadable_symbols:
                     undownloadable_symbols.append(symbol)
                     to_csv_str = ''
@@ -119,7 +119,10 @@ class APIFinData:
                         to_csv_content=to_csv_str,
                     )
                 return None
-            downloadable_symbols = fm.read_from_csv(downloadable_filename)
+            if fm.check_file_exist(downloadable_filename):
+                downloadable_symbols = fm.read_from_csv(downloadable_filename)
+            else:
+                downloadable_symbols = []
             if symbol not in downloadable_symbols:
                 downloadable_symbols.append(symbol)
                 to_csv_str = ''
@@ -135,8 +138,7 @@ class APIFinData:
             self.write_to_pickle_binary_file(filename=pickle_filename, data=raw_data)
             # save to human readable format, CSV file
             raw_data.to_csv(df_csv_filename)
-            # saving the log of the requests to external API        
-            self.append_to_json(to_json_content={'symbol': symbol} , filename=self.json_filename)
+
         else:
             # load data from file
             raw_data=self.read_from_pickle_binary_file(filename=pickle_filename)

@@ -131,6 +131,8 @@ class FileMgt:
     # 1. the elements in CSV
     @staticmethod
     def read_dna_list_from_csv(csv_file_path):
+        if not os.path.exists(csv_file_path):
+            return None
         with open(csv_file_path) as f:
             csv_content = f.read()
 
@@ -146,8 +148,9 @@ class FileMgt:
     # 1. csv_file_path: file path
     # output:
     # 1. a list of elements in the CSV file
-    def read_from_csv(self, csv_file_path):
-        if not self.check_file_exist(filename=csv_file_path):
+    @staticmethod
+    def read_from_csv(csv_file_path):
+        if not os.path.exists(csv_file_path):
             return []
         with open(csv_file_path) as f:
             csv_content = f.read()

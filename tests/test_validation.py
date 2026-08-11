@@ -14,7 +14,9 @@ class TestValidation(unittest.TestCase):
         valid = validation.Validation(
             run_id=run_id,
             val_fin_start='2021-01-01',
-            val_fin_end='2021-01-31')
+            val_fin_end='2021-01-31',
+            validation_hyper_parameter_filename = 'JSON/unittest_validation_hyper_parameter.json',
+            )
 
         self.assertIsNotNone(valid.gene_spec_filename)
         self.assertIsNotNone(valid.validation_hyper_parameter_filename)
@@ -49,13 +51,13 @@ class TestValidation(unittest.TestCase):
     
             # file path:
             ## mainly for ga
-            gene_spec_filename = 'JSON/test_gene_spec.json',
-            ga_performance_filename = 'JSON/test_ga_performance.json',
-            hyper_parameter_filename = 'JSON/test_hyper_parameter.json',
+            gene_spec_filename = 'JSON/unittest_gene_spec.json',
+            ga_performance_filename = 'JSON/unittest_ga_performance.json',
+            hyper_parameter_filename = 'JSON/unittest_hyper_parameter.json',
     
             ## sharing from ga to validation
-            elite_json_filepath = 'JSON/test_fittest',
-            elite_csv_filepath = 'CSV/test_fittest',
+            elite_json_filepath = 'JSON/unittest_fittest',
+            elite_csv_filepath = 'CSV/unittest_fittest',
         )
 
         the_ga.run_ga()
@@ -63,7 +65,9 @@ class TestValidation(unittest.TestCase):
         valid = validation.Validation(
             run_id=run_id,
             val_fin_start='2021-01-01',
-            val_fin_end='2021-01-31')
+            val_fin_end='2021-01-31',
+            validation_hyper_parameter_filename = 'JSON/unittest_validation_hyper_parameter.json',
+            )
 
         # checking the consistency of file name
         self.assertEqual(valid.gene_spec_filename, the_ga.gene_spec_filename)
@@ -124,11 +128,11 @@ class TestValidation(unittest.TestCase):
             fin_start='2020-12-01',
             fin_end='2020-12-31',
             run_id=run_id,
-            gene_spec_filename = 'JSON/test_gene_spec.json',
-            ga_performance_filename = 'JSON/test_ga_performance.json',
-            hyper_parameter_filename = 'JSON/test_hyper_parameter.json',
-            elite_json_filepath = 'JSON/test_fittest',
-            elite_csv_filepath = 'CSV/test_fittest',
+            gene_spec_filename = 'JSON/unittest_gene_spec.json',
+            ga_performance_filename = 'JSON/unittest_ga_performance.json',
+            hyper_parameter_filename = 'JSON/unittest_hyper_parameter.json',
+            elite_json_filepath = 'JSON/unittest_fittest',
+            elite_csv_filepath = 'CSV/unittest_fittest',
             num_of_elite = num_of_elite,
         )
 
@@ -148,16 +152,16 @@ class TestValidation(unittest.TestCase):
 
             # file path:
             ## sharing from ga to validation
-            gene_spec_filename = 'JSON/test_gene_spec.json',
-            elite_json_filepath = 'JSON/test_fittest',
-            elite_csv_filepath = 'CSV/test_fittest',
+            gene_spec_filename = 'JSON/unittest_gene_spec.json',
+            elite_json_filepath = 'JSON/unittest_fittest',
+            elite_csv_filepath = 'CSV/unittest_fittest',
 
             ## for validation
-            validation_hyper_parameter_filename = 'JSON/validation_hyper_parameter.json',
+            validation_hyper_parameter_filename = 'JSON/unittest_validation_hyper_parameter.json',
             )
 
         # run validation
-        validation_performance_filename = 'JSON/test_validation_performance.json'
+        validation_performance_filename = 'JSON/unittest_validation_performance.json'
         valid.run_validation(
             st_generation=(num_of_generations - 1), 
             st_num=(num_of_elite -1),
@@ -193,28 +197,31 @@ class TestValidation(unittest.TestCase):
     
             # file path:
             ## mainly for ga
-            gene_spec_filename = 'JSON/test_gene_spec.json',
-            ga_performance_filename = 'JSON/test_ga_performance.json',
-            hyper_parameter_filename = 'JSON/test_hyper_parameter.json',
+            gene_spec_filename = 'JSON/unittest_gene_spec.json',
+            ga_performance_filename = 'JSON/unittest_ga_performance.json',
+            hyper_parameter_filename = 'JSON/unittest_hyper_parameter.json',
     
             ## sharing from ga to validation
-            elite_json_filepath = 'JSON/test_fittest',
-            elite_csv_filepath = 'CSV/test_fittest',
+            elite_json_filepath = 'JSON/unittest_fittest',
+            elite_csv_filepath = 'CSV/unittest_fittest',
         )
 
         # training, finding the fittest strategy
         the_ga.run_ga()
 
+        validation_hyper_parameter_filename = 'JSON/unittest_validation_hyper_parameter.json'
         # start validation
         valid = validation.Validation(
             run_id=run_id,
             val_fin_start='2021-01-01',
-            val_fin_end='2021-01-31')
+            val_fin_end='2021-01-31',
+            validation_hyper_parameter_filename = validation_hyper_parameter_filename,
+            )
 
         # run validation
         # metrics() will be called by run_validation()
 
-        validation_performance_filename = 'JSON/test_validation_performance.json'
+        validation_performance_filename = 'JSON/unittest_validation_performance.json'
 
         valid.run_validation(
             st_generation=(num_of_generations - 1), 
@@ -227,4 +234,20 @@ class TestValidation(unittest.TestCase):
         self.assertTrue(fm.check_file_exist(validation_performance_filename))
         # remove test file
         os.remove(validation_performance_filename)
+        os.remove(validation_hyper_parameter_filename)
 
+    # tear down
+    def test_tear_down(self):
+        csv_folder = 'CSV/unittest_fittest'
+        json_folder = 'JSON/unittest_fittest'
+        
+        # remove files in 'JSON/unittest_fittest'
+        files = file_mgt.FileMgt.list_files_in_directory(json_folder)
+        # remove files in 'CSV/unittest_fittest'
+        files.extend(file_mgt.FileMgt.list_files_in_directory(csv_folder))
+        for f in files:
+            os.remove(f)
+            self.assertFalse(os.path.exists(f))
+        
+        os.rmdir(json_folder)
+        os.rmdir(csv_folder)

@@ -213,10 +213,10 @@ class TestGA(unittest.TestCase):
 
     # tear down
     def test_tear_down(self):
-        # remove files in 'JSON/test_fittest'
-        files = file_mgt.FileMgt.list_files_in_directory('JSON/test_fittest')
-        # remove files in 'CSV/test_fittest'
-        files.extend(file_mgt.FileMgt.list_files_in_directory('CSV/test_fittest'))
+        # remove files in 'JSON/unittest_fittest'
+        files = file_mgt.FileMgt.list_files_in_directory('JSON/unittest_fittest')
+        # remove files in 'CSV/unittest_fittest'
+        files.extend(file_mgt.FileMgt.list_files_in_directory('CSV/unittest_fittest'))
         for f in files:
             os.remove(f)
             self.assertFalse(os.path.exists(f))

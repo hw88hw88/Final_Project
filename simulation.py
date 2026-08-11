@@ -154,8 +154,9 @@ class Simulation:
                         continue
 
             # checking the signal score
-            ## give up the stocks if the signal score is negative
-            if stock_dict['signal_score', ''][date_timestamp] <= 0:
+            ## give up the stocks if the signal score is negative or 
+            ## Sharpe ratio below 1
+            if stock_dict['signal_score', ''][date_timestamp] <= 0 or stock_dict['sharpe_ratio', ''][date_timestamp] < 1:
                 continue
             else:
                 # getting the sharpe ratio of the stock, and store the selected stock

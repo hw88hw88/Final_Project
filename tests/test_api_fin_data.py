@@ -12,7 +12,6 @@ class TestAPIFinData(unittest.TestCase):
 
         get_fin_data=api_fin_data.APIFinData()
         self.assertIsNotNone(get_fin_data.stock_symbol_file)
-        self.assertIsNotNone(get_fin_data.json_filename)
         self.assertIsNotNone(get_fin_data.get_symbol_from_csv)
         self.assertIsNotNone(get_fin_data.get_financial_data)
         self.assertIsNotNone(get_fin_data.append_to_json)
@@ -64,7 +63,6 @@ class TestAPIFinData(unittest.TestCase):
     def test_var_type(self):
         get_fin_data=api_fin_data.APIFinData()
         self.assertEqual(str(type(get_fin_data.stock_symbol_file)), "<class 'str'>")
-        self.assertEqual(str(type(get_fin_data.json_filename)), "<class 'str'>")
 
     # test if get_financial_data() works as expected
     def test_get_financial_data(self):
@@ -89,37 +87,49 @@ class TestAPIFinData(unittest.TestCase):
     # the result will be stored to two csv files ('downloadable_stock_code.csv' and 'undownloadable_stock_code.csv')
     def test_all_sp500(self):
         get_fin_data=api_fin_data.APIFinData()
-        # get all stock code
-        symbols = get_fin_data.get_symbol_from_csv('2020-01-01')
+        # the beginning of financial period used in unittesting, and testing,
+        ## and the beginning commonly used in training and validation
+        fin_start = ['2020-01-01', '2020-12-01', '2021-01-01', '2025-01-01', '2023-01-01', '2024-01-01']
+
+        # the 
         downloadable = []
         undownloadable = []
-        for s in symbols:
-            data=get_fin_data.get_financial_data(symbol=s)
-            if data is None:
-                undownloadable.append(s)
-            else:
-                downloadable.append(s)
+        
+        # get all stock code
+        for fin_s in fin_start:
+            symbols = get_fin_data.get_symbol_from_csv(fin_s)
 
-        # at least the data from a stock of S&P500 can be downloaded
-        self.assertGreater(len(downloadable), 0)
+            for s in symbols:
+                data=get_fin_data.get_financial_data(symbol=s)
+                if data is None:
+                    undownloadable.append(s)
+                else:
+                    downloadable.append(s)
 
-        # the no. of result equals the no. of symbols
-        self.assertEqual(len(symbols), len(downloadable) + len(undownloadable))
+            # at least the data from a stock of S&P500 can be downloaded
+            self.assertGreater(len(downloadable), 0)
 
-        # check the list of downloadable and undownloadable symbols respectively
-        downloadable_filename='CSV/downloadable_stock_code.csv'
-        with open(downloadable_filename) as f:
-            csv_content = f.read()
-        for i in range(len(downloadable)):
-            self.assertTrue(downloadable[i] in csv_content)
+            # check if files created successfully
+            downloadable_filename='CSV/downloadable_stock_code.csv'
+            undownloadable_filename='CSV/undownloadable_stock_code.csv'
 
-        undownloadable_filename='CSV/undownloadable_stock_code.csv'
-        with open(undownloadable_filename) as f:
-            csv_content = f.read()
-        for i in range(len(undownloadable)):
-            self.assertTrue(undownloadable[i] in csv_content)
+            self.assertTrue(os.path.exists(downloadable_filename))
+            self.assertTrue(os.path.exists(undownloadable_filename))
 
-        # check if lists created successfully
-        self.assertTrue(os.path.exists(downloadable_filename))
-        self.assertTrue(os.path.exists(undownloadable_filename))
+            # check the list of downloadable and undownloadable symbols respectively
 
+            with open(downloadable_filename) as f:
+                csv_content = f.read()
+            for i in range(len(downloadable)):
+                # check if downloadable symbols are recorded in CSV file
+                self.assertTrue(downloadable[i] in csv_content)
+                # check if downloadable symbols in undownloadable symbols
+                self.assertFalse(downloadable[i] in undownloadable)
+
+            with open(undownloadable_filename) as f:
+                csv_content = f.read()
+            for i in range(len(undownloadable)):
+                # check if downloadable symbols are recorded in CSV file
+                self.assertTrue(undownloadable[i] in csv_content)
+                # check if undownloadable symbols in downloadable symbols
+                self.assertFalse(undownloadable[i] in downloadable)

@@ -109,13 +109,13 @@ class GA:
 
         # file path:
         ## mainly for ga
-        gene_spec_filename = 'JSON/test_gene_spec.json',
-        ga_performance_filename = 'JSON/test_ga_performance.json',
-        hyper_parameter_filename = 'JSON/test_hyper_parameter.json',
+        gene_spec_filename = 'JSON/unittest_gene_spec.json',
+        ga_performance_filename = 'JSON/unittest_ga_performance.json',
+        hyper_parameter_filename = 'JSON/unittest_hyper_parameter.json',
 
         ## sharing from ga to validation
-        elite_json_filepath = 'JSON/test_fittest',
-        elite_csv_filepath = 'CSV/test_fittest',
+        elite_json_filepath = 'JSON/unittest_fittest',
+        elite_csv_filepath = 'CSV/unittest_fittest',
         
         num_of_elite = 3,
     ):
