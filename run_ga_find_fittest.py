@@ -86,7 +86,7 @@ start_up_cash = 100000
 num_of_generations = 50
 num_of_elite = 1
 pop_size = 50
-point_mutate_rate = 0.1
+point_mutate_rate = 0.2
 point_mutate_amt = 0.2
 
 # initialise file paths

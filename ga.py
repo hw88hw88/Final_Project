@@ -299,15 +299,15 @@ class GA:
     # change:
     # 1. add performance metrics to <ga_performance_file_content> JSON
     # 2. print the metrics and performance
-    def metrics(self, generation, top_n_strategies):
+    def metrics(self, generation, top_n_strategies, all_rewards):
         # find the fittest strategy, and log and print its performance
         rewards = [st.rewards for st in top_n_strategies]
 
         # prepare the information to be logged to file
         log = {
             "generation": str(generation),
-            "max_reward": str(float(np.round(np.max(rewards), 3))),
-            "min_reward": str(float(np.round(np.min(rewards), 3))),
+            "max_reward": str(float(np.round(np.max(all_rewards), 3))),
+            "min_reward": str(float(np.round(np.min(all_rewards), 3))),
             # the highest reward strategy
             "fittest_gdict": top_n_strategies[-1].gdict,
             "fin_start": self.fin_start,
@@ -325,8 +325,8 @@ class GA:
         print('\n', '-' * 20, ' ' * 3, ' Training - Generation:', generation, ' ' * 3, '-' * 20)
         print(
             str(generation), 
-            'max_reward:', float(np.round(np.max(rewards), 3)), 
-            ', min_reward:', float(np.round(np.min(rewards), 3)),
+            'max_reward:', float(np.round(np.max(all_rewards), 3)), 
+            ', min_reward:', float(np.round(np.min(all_rewards), 3)),
             ', pop_size:', self.pop_size,
             ', fin_start:', self.fin_start,
             ', fin_end:', self.fin_end,
@@ -425,9 +425,9 @@ class GA:
     # 2. CSV file(s) storing the genome of the <self.num_of_elite> fittest
     def elitism(self, pop, generation):
         # the performance of strategies in current generation
-        rewards = [st.rewards for st in pop.strategies]
+        all_rewards = [st.rewards for st in pop.strategies]
 
-        np_rewards = np.array(copy.deepcopy(rewards))
+        np_rewards = np.array(copy.deepcopy(all_rewards))
         np_st = np.array(copy.deepcopy(pop.strategies))
 
         # sorting the strategy array in descending order of the strategy rewards
@@ -454,7 +454,7 @@ class GA:
 
             counter -= 1
 
-        return top_n_st, rewards
+        return top_n_st, all_rewards
 
     '''
     # the main body and workflow of GA
@@ -596,16 +596,16 @@ class GA:
 
             # elitism
             ## finds the <self.num_of_elite> fittest
-            top_n_strategies, rewards = self.elitism(
+            top_n_strategies, all_rewards = self.elitism(
                 pop=pop, 
                 generation=generation)
 
             # calculating, logging and printing metrics of the fittest strategy
             ## it must be called after the elitism, because the self.elitism finds the fittest from current and previous generations
-            self.metrics(generation=generation, top_n_strategies=top_n_strategies)
+            self.metrics(generation=generation, top_n_strategies=top_n_strategies, all_rewards=all_rewards)
 
             # getting the fitmap for breeding
-            fit_map = population.Population.get_fitness_map(reward=rewards)
+            fit_map = population.Population.get_fitness_map(reward=all_rewards)
 
             # the number of newly breeded strategies is the existing number of strategies minus <len(top_n_strategies)>, because the <len(top_n_strategies)> fittest strategies will be added to the population. The population size remains unchanged.
             # breeding new strategies

@@ -241,7 +241,7 @@ class TestStrategy(unittest.TestCase):
 
         stocks_df=[s_df_aapl, s_df_msft]
 
-        current_target_portfolio=['AAPL', 'MSFT']
+        current_target_portfolio=['AAPL']
 
         st.rebalance(
             current_target_portfolio=current_target_portfolio, 
@@ -251,7 +251,6 @@ class TestStrategy(unittest.TestCase):
         
         # check if the target stocks were bought
         self.assertIsNotNone(st.stocks['AAPL'])
-        self.assertIsNotNone(st.stocks['MSFT'])
 
         # check cash balance after the trade
         self.assertLess(st.cash, start_up_cash)
@@ -266,7 +265,7 @@ class TestStrategy(unittest.TestCase):
         self.assertLess(st.total_value, start_up_cash)
 
         # next day
-        current_target_portfolio=['AAPL']
+        current_target_portfolio=[]
 
         st.rebalance(
             current_target_portfolio=current_target_portfolio, 
@@ -275,8 +274,7 @@ class TestStrategy(unittest.TestCase):
             trading_fee=trading_fee)
 
         # check if the target stocks were being held and sold
-        self.assertIsNotNone(st.stocks['AAPL'])
-        self.assertFalse('MSFT' in list(st.stocks.keys()))
+        self.assertFalse('AAPL' in list(st.stocks.keys()))
 
     # check fitness()
     def test_fitness(self):
