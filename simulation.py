@@ -37,9 +37,9 @@ class Simulation:
         data_before_start=raw_data.loc[(raw_data.index <= pd_start)].tail(days_before_start)
         data_before_start_dict=data_before_start.to_dict()
 
-        # key is the column name
+        # the key is the column name
         columns=list(data_before_start_dict.keys())
-        # key2 is the timestamp
+        # now the key is the timestamp
         key_time=list(data_before_start_dict[columns[0]].keys())
         if (len(key_time) < days_before_start):
             return None

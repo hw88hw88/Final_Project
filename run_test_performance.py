@@ -1,6 +1,8 @@
 import file_mgt
 import validation
 import os
+import api_fin_data
+import pandas as pd
 
 # initialise hyper-parameters
 run_id_file_path = 'CSV/run_id.csv'
@@ -93,7 +95,8 @@ if fm.check_file_exist(run_id_file_path):
                     validation_performance_filename = test_file_path + '/testing_performance_gen' + str(gen) + '_elite' + str(num_e) + '.json'
                 )
     else:
-        print('<num_of_run> out of range. Please run training before this test.')  
+        print('<num_of_run> out of range. Please run training before this test.')
+
 else:
     print('<run_id> file not found')
     print('filepath: ', run_id_file_path)

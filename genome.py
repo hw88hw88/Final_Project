@@ -124,7 +124,7 @@ class Genome:
     ## 1. a dict specifying the range of the parameters
     @staticmethod
     def get_gene_spec():
-        genome_spec={
+        gene_spec={
             # financial indicators:
 
             ## simple moving average:
@@ -157,7 +157,7 @@ class Genome:
             # number of days to rebalance the portfolio to target portfolio
             'num_of_day_rebalance':{'low_limit': 20, 'up_limit':60},
             }
-        return genome_spec
+        return gene_spec
     
     '''
     @staticmethod
@@ -194,7 +194,7 @@ class Genome:
     Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
     '''
 
-    # generate gdict{} according to the spec
+    # generate gdict{} (genes in the form of python dictionary) according to the spec
     # input: 
     ## 1. gene,
     ## 2. genome spec

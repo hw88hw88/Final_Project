@@ -71,19 +71,7 @@ class TestGA(unittest.TestCase):
             fin_start='2020-12-01',
             fin_end='2020-12-31',
         )
-        # pop = population.Population(start_up_cash=start_up_cash, pop_size=pop_size)
 
-        # all_rewards = []
-        # for p in range(pop_size):
-        #     pop.strategies[p].age +=1
-        #     self.assertNotEqual(pop.strategies[p].age, 0)
-
-        #     all_rewards.append(pop.strategies[p]['rewards'])
-
-        # the_ga.metrics(
-        #     generation=1, 
-        #     top_n_strategies=pop.strategies, 
-        #     all_rewards=all_rewards)
         the_ga.run_ga()
 
         self.assertIsNotNone(the_ga.ga_performance_file_content)

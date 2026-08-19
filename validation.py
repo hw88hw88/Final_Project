@@ -1,4 +1,3 @@
-import ga
 import file_mgt
 import simulation
 import strategy

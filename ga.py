@@ -300,9 +300,6 @@ class GA:
     # 1. add performance metrics to <ga_performance_file_content> JSON
     # 2. print the metrics and performance
     def metrics(self, generation, top_n_strategies, all_rewards):
-        # find the fittest strategy, and log and print its performance
-        rewards = [st.rewards for st in top_n_strategies]
-
         # prepare the information to be logged to file
         log = {
             "generation": str(generation),
@@ -615,7 +612,6 @@ class GA:
                 p2_ind = population.Population.select_parent(fit_map)
                 p1 = pop.strategies[p1_ind]
                 p2 = pop.strategies[p2_ind]
-                # now we have the parents!
 
                 dna = genome.Genome.crossover(g1=p1.gene, g2=p2.gene)
                 dna = genome.Genome.point_mutate(dna, rate=self.point_mutate_rate, amount=self.point_mutate_amt)
