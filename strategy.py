@@ -9,7 +9,13 @@ class Strategy:
     # 2. (optional) gene: the gene of a strategy
     # 3. (optional) spec: the spec of a strategy
     # 4. (optional) gdict: the gdict of a strategy
-    def __init__(self, start_up_cash, gene=None, spec=None, gdict=None):
+    def __init__(
+        self, 
+        start_up_cash=100000, 
+        gene=None, 
+        spec=None, 
+        gdict=None
+        ):
         # the configuration or structure of the strategy
         if spec is None:
             spec=genome.Genome.get_gene_spec()
@@ -25,7 +31,7 @@ class Strategy:
                 spec=spec
             )
         self.gdict = gdict
-        
+
         self.reset(start_up_cash=start_up_cash)
 
     # reset the parameters of the strategy

@@ -599,7 +599,11 @@ class GA:
 
             # calculating, logging and printing metrics of the fittest strategy
             ## it must be called after the elitism, because the self.elitism finds the fittest from current and previous generations
-            self.metrics(generation=generation, top_n_strategies=top_n_strategies, all_rewards=all_rewards)
+            self.metrics(
+                generation=generation, 
+                top_n_strategies=top_n_strategies, 
+                all_rewards=all_rewards
+                )
 
             # getting the fitmap for breeding
             fit_map = population.Population.get_fitness_map(reward=all_rewards)
@@ -641,4 +645,4 @@ class GA:
         with open(self.ga_performance_filename, "w") as f:
             f.write(self.ga_performance_file_content)
 
-        
+

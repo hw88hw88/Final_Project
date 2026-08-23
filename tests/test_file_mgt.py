@@ -23,25 +23,21 @@ class TestFileMgt(unittest.TestCase):
     def test_list_files_in_directory(self):
         fm=file_mgt.FileMgt()
 
-        # remove all files found in JSON folder
-        for file in fm.list_files_in_directory('JSON'):
-            os.remove(file)
-
-        # check if no file in the JSON folder
-        files = fm.list_files_in_directory('JSON')
-        self.assertEqual(len(files), 0)
-
         # try writing a new JSON file
         content = {'content': 'test content'}
-        filepath = 'JSON/test.json'
+        filepath = 'JSON/test/test.json'
+        if not os.path.exists('JSON/test'):
+            os.mkdir('JSON/test')
         fm.write_to_json(to_json_content=content, filename=filepath)
 
         # list and check the number of JSON file(s) is 1
         files = fm.list_files_in_directory('JSON')
-        self.assertEqual(len(files), 1)
+        read_file_content = fm.read_json(filename=filepath)
+        self.assertEqual(read_file_content, content)
 
         # remove the test file
         os.remove(filepath)
+        os.rmdir('JSON/test')
 
     # test write_to_json()
     def test_write_to_json(self):
