@@ -115,9 +115,7 @@ class Strategy:
         ## the value and volume to be bought
         ### the less of available stocks and maximum number of stocks allowed by the gdict of the strategy
         target_num_of_stocks = min(len(current_target_portfolio), self.gdict['max_num_of_stock'])
-        ## target number >= 1
-        target_num_of_stocks = max(target_num_of_stocks, 1)
-
+        
         # check if the target number of stocks is 0
         if target_num_of_stocks <= 0:
             return

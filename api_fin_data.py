@@ -15,10 +15,10 @@ class APIFinData:
 
     # this function retrieve the symbols of constituent stocks of the Standard & Poor’s 500 (S&P500) on a specified date from a csv file
     # input:
-    # 1. fin_start: the start date of the financial period (This is the date to determine the list of stocks. The trading date on or after the <fin_start> will be used)
+    # 1. trading_date: the trading date on which the list of S&P500 stocks were (This is the date to determine the list of S&P500 stocks. The list of symbols must be on or before <trading_date>)
     # output:
     # 1. a list of symbols
-    def get_symbol_from_csv(self, fin_start):
+    def get_symbol_from_csv(self, trading_date):
         symbol=[]
         # using the list of symbols of S&P500 stocks from github
         ## Reference: <https://github.com/fja05680/sp500/blob/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv>
@@ -38,13 +38,13 @@ class APIFinData:
             tickers = lines[line].split(',')
             # tickers[0] is the date of the S&P500 components
             # skip the line of symbols before the start date of the financial period
-            if (pd.Timestamp(tickers[0]) < pd.Timestamp(fin_start) and 
+            if (pd.Timestamp(tickers[0]) < pd.Timestamp(trading_date) and 
                 line < len(lines) - 1):
                 continue
             # split the line of content
             ## the [line - 1] below means using the tickers just before the start of the financial period
             tickers = lines[line - 1].split(',')
-            ## if the financial period <fin_start> begins after the last date on the list, use the symbols of the last date on the list
+            ## if the <trading_date> was after the last date on the list, use the symbols of the last date on the list
             if line == len(lines) - 1:
                 tickers = lines[line].split(',')
             # return the first line of raw data on or after financial period
@@ -62,12 +62,25 @@ class APIFinData:
     ### symbol: the stock code e.g. "MSFT", "MU"
     ## output:
     ### raw_data: the dataframe from the external API
-    def get_financial_data(self, symbol):
+    def get_financial_data(self, symbol, period_end):
+        fm = file_mgt.FileMgt()
+        # check the last update of the stock data
+        symbol_last_update_filename = 'JSON/symbol_update.json'
+        if fm.check_file_exist(symbol_last_update_filename):
+            symbol_last_update = fm.read_json(symbol_last_update_filename)
+        else:
+            symbol_last_update = {}
+
+        is_force_download = True
+        if symbol in symbol_last_update:
+            # force to download if the period end is later than the last update
+            if pd.Timestamp(symbol_last_update.get(symbol)) >= pd.Timestamp(period_end):
+                is_force_download = False
+        
         # check if the symbol has been tried but not downloadable
         ## reduce the number of requests made to the API
         undownloadable_filename='CSV/undownloadable_stock_code.csv'
-        fm = file_mgt.FileMgt()
-        if fm.check_file_exist(undownloadable_filename):
+        if fm.check_file_exist(undownloadable_filename) and not is_force_download:
             undownloadable_symbols = fm.read_from_csv(undownloadable_filename)
             if symbol in undownloadable_symbols:
                 # return None, if tried downloading but unsuccessful
@@ -95,9 +108,15 @@ class APIFinData:
             os.mkdir('JSON')
 
         ## check if the data was saved in files to reduce the number of requests made to API and save time
-        if not os.path.exists(pickle_filename):
+        if not os.path.exists(pickle_filename) or is_force_download:
             # download the data from external source if not exist
             raw_data = yf.download(symbol, period='max', auto_adjust=True)
+            # update the last update to the time of downloading
+            symbol_last_update[symbol] = str(pd.Timestamp.now())
+            fm.write_to_json(
+                to_json_content=symbol_last_update,
+                filename=symbol_last_update_filename
+            )
             # wait to avoid abuse the API
             time.sleep(1)
 

@@ -21,9 +21,17 @@ class Simulation:
     # 2. symbol: the stock code
     # output:
     # 1. pandas data frame storing the financial data and indicators of the stock
-    def calculate_fin_indicator_for_stock(self, st, symbol, risk_free_interest_rate = 0.03):
+    def calculate_fin_indicator_for_stock(
+            self, 
+            st, 
+            symbol, 
+            risk_free_interest_rate = 0.03
+            ):
         # retrieve the data from API or saved file
-        raw_data=self.api.get_financial_data(symbol=symbol)
+        raw_data=self.api.get_financial_data(
+            symbol=symbol,
+            period_end=self.fin_end
+            )
         if raw_data is None:
             return None
 
@@ -110,6 +118,10 @@ class Simulation:
         # calculating sharpe ratio
         data['sharpe_ratio'] = (data['annualized_return'] - risk_free_interest_rate) / data['annualized_volatility']
 
+        # if the period is a day, the start day will be the last trading day on or before the period end
+        if self.fin_start == self.fin_end:
+            pd_start = self.api.get_nth_date(data.copy(), n=-1)
+
         # leave the data for the period only (removing the rows before the period, after calculating the financial indicators for the period)
         data=data.loc[(data.index >= pd_start) & (data.index <= pd_end)]
 
@@ -176,6 +188,26 @@ class Simulation:
 
         # return a list
         return top_n_selected_stock_symbol.tolist()
+
+    # return all stocks with financial indicators of the financial period
+    # input:
+    # 1. st: an investment strategy instance
+    # output:
+    # 2. stocks_df: A list of data frame of all the stocks in the financial period
+    def get_stock_fin_indicator(self, st):
+        # get the symbol of available stocks in S&P500
+        available_symbols=self.api.get_symbol_from_csv(trading_date=self.fin_start)
+
+        # store the market data and the calculation of the financial indicators of each stock. The financial indicators were calculated based on the parameters in the strategy
+        stocks_df=[]
+        # calculating the financial indicators of each stock with the parameters in the strategy
+        ## get the financial data and indicators
+        for symbol in available_symbols:
+            result=self.calculate_fin_indicator_for_stock(st=st, symbol=symbol)
+            # the result is None, when the data of the stock is empty or not enough in the period (from self.fin_start to self.fin_end). Then, the stock will be not be selected in the period.
+            if result is not None:
+                stocks_df.append(result)
+        return stocks_df
 
     '''
     def run_creature(self, cr = None, cr_lifetime=2400):
@@ -267,19 +299,9 @@ class Simulation:
     # 1. run the simulation of the investment
     # 2. call other methods to print the result on screen, and save the result to JSON and CSV files
     def run_strategy(self, st):
-        # store the market data and the calculation of the financial indicators of each stock. The financial indicators were calculated based on the parameters in the strategy
-        stocks_df=[]
-
-        # get the symbol of available stocks in S&P500
-        available_symbols=self.api.get_symbol_from_csv(fin_start=self.fin_start)
-
-        # calculating the financial indicators of each stock with the parameters in the strategy
-        ## get the financial data and indicators
-        for symbol in available_symbols:
-            result=self.calculate_fin_indicator_for_stock(st=st, symbol=symbol)
-            # the result is None, when the data of the stock is empty or not enough in the period (from self.fin_start to self.fin_end). Then, the stock will be not be selected in the period.
-            if result is not None:
-                stocks_df.append(result)
+        stocks_df = self.get_stock_fin_indicator(
+            st = st
+        )
 
         # initialise trading day counter
         count_trading_day=0

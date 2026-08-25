@@ -364,6 +364,7 @@ class GA:
                 ', fittest_win_rate_' + str(counter - 1) + ':', 
                 float(np.round((top_n_strategies[-counter].num_of_increase_in_value / 
                                 top_n_strategies[-counter].age), 3)),
+                ', fittest_sharpe_ratio_' + str(counter - 1) + ':', 
                 float(np.round(top_n_strategies[-counter].sharpe_ratio, 3)),
                 )
 
@@ -569,12 +570,12 @@ class GA:
 
             # initialise the financial data for multi-threads environment
             my_api = api_fin_data.APIFinData()
-            symbols = my_api.get_symbol_from_csv(fin_start=self.fin_start)
+            symbols = my_api.get_symbol_from_csv(trading_date=self.fin_start)
 
             # pre-downloading any missing financial data for the running of simulations
             ## this helps prevent the error(s) of concurrent downloading of financial data in multi-threads environment
             for s in symbols:
-                my_api.get_financial_data(symbol=s)
+                my_api.get_financial_data(symbol=s, period_end=self.fin_end)
         else:
             sim = simulation.Simulation(
                 fin_start=self.fin_start,

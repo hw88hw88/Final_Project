@@ -14,6 +14,7 @@ class TestSimulation(unittest.TestCase):
         self.assertIsNotNone(sim.api)
         self.assertIsNotNone(sim.calculate_fin_indicator_for_stock)
         self.assertIsNotNone(sim.sorting_stocks)
+        self.assertIsNotNone(sim.get_stock_fin_indicator)
         self.assertIsNotNone(sim.run_strategy)
 
     # test if functions return something
@@ -111,4 +112,17 @@ class TestSimulation(unittest.TestCase):
         sim.eval_population(pop)
 
         self.assertIsNotNone(pop.strategies[0].age)
+        self.assertEqual(str(type(pop.strategies[0].age)), "<class 'int'>")
+        self.assertGreater(pop.strategies[0].age, 0)
+
+    # test get_stock_fin_indicator()
+    def test_get_stock_fin_indicator(self):
+        sim = simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
+        start_up_cash =100000
+        st = strategy.Strategy(start_up_cash=start_up_cash)
+        df = sim.get_stock_fin_indicator(
+            st=st
+        )
+        self.assertIsNotNone(df)
+        self.assertEqual(str(type(df)), "<class 'list'>")
 

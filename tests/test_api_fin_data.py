@@ -29,11 +29,11 @@ class TestAPIFinData(unittest.TestCase):
         # testing "get_financial_data()"
         ## make request to external API
         symbol='MSFT'
-        data_msft=get_fin_data.get_financial_data(symbol=symbol)
+        data_msft=get_fin_data.get_financial_data(symbol=symbol, period_end='2020-01-01')
         self.assertIsNotNone(data_msft)
 
         symbol='ABC'
-        data=get_fin_data.get_financial_data(symbol=symbol)
+        data=get_fin_data.get_financial_data(symbol=symbol, period_end='2020-01-01')
         self.assertIsNone(data)
 
         # testing "append_to_json()"
@@ -68,20 +68,31 @@ class TestAPIFinData(unittest.TestCase):
     def test_get_financial_data(self):
         get_fin_data=api_fin_data.APIFinData()
         # make request to external API
+        # the symbol 'MSFT' was in the list of stock symbol
         symbol='MSFT'
-        api_data=get_fin_data.get_financial_data(symbol=symbol)
+        api_data=get_fin_data.get_financial_data(symbol=symbol, period_end='2020-01-01')
         self.assertIsNotNone(api_data)
         # test if a pickle file was saved successfully, and test if the pickle can be read
         data=get_fin_data.read_from_pickle_binary_file('pickle/stock_data/' + symbol + '_max.pkl')
         self.assertIsNotNone(data)
         self.assertEqual(str(type(data)), "<class 'pandas.DataFrame'>")
 
+        # the symbol 'ABC' not in the list of stock symbol at the time of writing the code
         symbol='ABC'
-        api_data=get_fin_data.get_financial_data(symbol=symbol)
+        api_data=get_fin_data.get_financial_data(symbol=symbol, period_end='2020-01-01')
         self.assertIsNone(api_data)
         # test if a pickle file was saved successfully, and test if the pickle can be read
         file_path='pickle/stock_data/' + symbol + '_max.pkl'
         self.assertFalse(os.path.exists(file_path))
+
+        # check last update file
+        symbol_last_update_filename = 'JSON/symbol_update.json'
+        if os.path.exists(symbol_last_update_filename):
+            with open(symbol_last_update_filename) as f:
+                symbol_last_update = f.read()
+            self.assertTrue('MSFT' in symbol_last_update)
+            # although the symbol 'ABC' was not downloadable from yfinance, the symbol should still be in the list of symbol_last_update
+            self.assertTrue('ABC' in symbol_last_update)
 
     # test if all constituent stocks of S&P500 can be retrieved
     # the result will be stored to two csv files ('downloadable_stock_code.csv' and 'undownloadable_stock_code.csv')
@@ -100,7 +111,7 @@ class TestAPIFinData(unittest.TestCase):
             symbols = get_fin_data.get_symbol_from_csv(fin_s)
 
             for s in symbols:
-                data=get_fin_data.get_financial_data(symbol=s)
+                data=get_fin_data.get_financial_data(symbol=s, period_end='2026-06-30')
                 if data is None:
                     undownloadable.append(s)
                 else:
