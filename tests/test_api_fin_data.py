@@ -144,3 +144,21 @@ class TestAPIFinData(unittest.TestCase):
                 self.assertTrue(undownloadable[i] in csv_content)
                 # check if undownloadable symbols in downloadable symbols
                 self.assertFalse(undownloadable[i] in downloadable)
+
+    # test get_symbol_from_csv()
+    def test_get_symbol_from_csv(self):
+        get_fin_data=api_fin_data.APIFinData()
+
+        trading_date = ['2020-01-01', '2026-06-29', '2026-06-30', '2026-07-01', '2026-08-01']
+
+        for td in trading_date:
+
+            symbols = get_fin_data.get_symbol_from_csv(
+                trading_date=td
+            )
+            self.assertIsNotNone(symbols)
+            self.assertGreater(len(symbols), 0)
+            self.assertEqual(str(type(symbols)), "<class 'list'>")
+            for s in symbols:
+                self.assertEqual(str(type(s)), "<class 'str'>")
+

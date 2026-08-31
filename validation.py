@@ -207,7 +207,7 @@ class Validation:
                          filename=validation_performance_filename)
         
         # print the performance
-        print('\n', '-' * 10, ' ' * 5, ' Validation - generation: ', st_generation, ', fittest: ', st_num, ' ' * 5, '-' * 10)
+        print('\n', '-' * 10, ' ' * 5, ' ' + str(showing_task) + ' - generation: ', st_generation, ', fittest: ', st_num, ' ' * 5, '-' * 10)
         print(
             str(showing_task)+'_fin_start: ', self.val_fin_start,
             ', ' + str(showing_task) + '_fin_end: ', self.val_fin_end,

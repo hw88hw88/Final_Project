@@ -32,7 +32,7 @@ class TestValidation(unittest.TestCase):
         pop_size=1
         num_of_elite = 1
         num_of_generations=1
-        run_id = 'test'
+        run_id = 'unittest'
 
         the_ga=ga.GA(
             pool_size=1,

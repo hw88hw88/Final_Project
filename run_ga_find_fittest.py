@@ -80,6 +80,12 @@ fin_end = '2023-12-31'
 val_fin_start = '2024-01-01'
 val_fin_end = '2024-12-31'
 
+## import previous strategy or not
+### set to True to import generated strategy
+### useful to test the strategy across period, such as walk-forward test
+# the fittest strategy of the last generation of the run would be imported
+is_import_previous_strategy = False
+
 trading_fee = 0.01
 start_up_cash = 100000
 
@@ -169,10 +175,13 @@ g = ga.GA(
         gene_spec_filename = gene_spec_filename,
         ga_performance_filename = ga_performance_filename,
         hyper_parameter_filename = hyper_parameter_filename,
+        run_id_filename = str(csv_parent_path) + '/run_id.csv',
 
         ## sharing from ga to validation
         elite_json_filepath = elite_json_filepath,
         elite_csv_filepath = elite_csv_filepath,
+
+        is_import_previous_strategy = is_import_previous_strategy,
 )
 # run the genetic algorithm
 g.run_ga()

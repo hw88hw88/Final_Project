@@ -245,6 +245,17 @@ class Strategy:
         annualized_return = daily_return.mean() * 252
         annualized_volatility = daily_return.std() * np.sqrt(252)
 
+        # avoid division by 0
+        if annualized_volatility == 0:
+            if annualized_return - risk_free_interest_rate <= 0:
+                return 0
+            else:
+                # this should be very rare
+                # having high return but zero volatility actually means running very fast without moving 
+                print('annualized_return - risk_free_interest_rate= ', annualized_return - risk_free_interest_rate)
+                print('annualized_volatility= ', annualized_volatility)
+                return np.inf
+
         # calculating sharpe ratio
         sharpe_ratio = (annualized_return - risk_free_interest_rate) / annualized_volatility
 

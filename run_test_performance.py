@@ -1,7 +1,7 @@
-from load_trained_strategy import LoadTrainedStrategy
 import validation
 import os
 import file_mgt
+from chatbot import Chatbot
 
 # initialise hyper-parameters
 
@@ -14,7 +14,7 @@ testing_fin_start = '2025-01-01'
 testing_fin_end = '2025-12-31'
 
 
-run_id = LoadTrainedStrategy.get_run_id(num_of_run=num_of_run)
+run_id = Chatbot.get_run_id(num_of_run=num_of_run)
 
 if run_id is not None:
     # import training hyper-parameters
@@ -77,7 +77,6 @@ if run_id is not None:
             )
 else:
     print('<run_id> file not found')
-    print('filepath: ', run_id_file_path)
 
 
 

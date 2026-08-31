@@ -8,6 +8,8 @@ import strategy
 import copy
 import file_mgt
 import api_fin_data
+from chatbot import Chatbot
+from inputimeout import inputimeout, TimeoutOccurred
 
 class GA:
     '''
@@ -101,7 +103,7 @@ class GA:
         trading_fee,
         fin_start,
         fin_end,
-        run_id = 0,
+        run_id = str(0),
         pop_size = 50,
         num_of_generations = 50,
         point_mutate_rate = 0.1, 
@@ -112,12 +114,15 @@ class GA:
         gene_spec_filename = 'JSON/unittest_gene_spec.json',
         ga_performance_filename = 'JSON/unittest_ga_performance.json',
         hyper_parameter_filename = 'JSON/unittest_hyper_parameter.json',
+        run_id_filename = 'CSV/run_id.csv',
 
         ## sharing from ga to validation
         elite_json_filepath = 'JSON/unittest_fittest',
         elite_csv_filepath = 'CSV/unittest_fittest',
         
         num_of_elite = 3,
+
+        is_import_previous_strategy = False,
     ):
         self.pool_size = pool_size
         self.fin_start = fin_start
@@ -129,17 +134,20 @@ class GA:
         if pop_size <= num_of_elite and num_of_generations > 1:
             self.pop_size = num_of_elite + 1
         else:
-            self.pop_size=pop_size
-        self.gene_spec_filename=gene_spec_filename
-        self.ga_performance_filename=ga_performance_filename
+            self.pop_size = pop_size
+
+        self.gene_spec_filename = gene_spec_filename
+        self.ga_performance_filename = ga_performance_filename
         self.hyper_parameter_filename = hyper_parameter_filename
+        self.run_id_filename = run_id_filename
+
         self.elite_json_filepath = elite_json_filepath
         self.elite_csv_filepath = elite_csv_filepath
 
         # the number of generations
-        self.num_of_generations=num_of_generations
-        self.point_mutate_rate=point_mutate_rate
-        self.point_mutate_amt=point_mutate_amt
+        self.num_of_generations = num_of_generations
+        self.point_mutate_rate = point_mutate_rate
+        self.point_mutate_amt = point_mutate_amt
 
         # number of fittest strategies to be selected to the next generation
         ## e.g. 3 means the 3 fittest strategies of the current and previous generations will be saved 
@@ -150,11 +158,18 @@ class GA:
 
         # run id
         ## to identify the files generated this time
-        self.run_id = run_id
+        self.run_id = str(run_id)
+        self.run_id = self.run_id.strip()
 
         # initialise ga performance file content
         # preparing the JSON log file at the beginning
         self.ga_performance_file_content = '{"run_id": "' + str(self.run_id) + '",\n "result":[\n'
+
+        # initialize the api and file management
+        self.my_api = api_fin_data.APIFinData()
+        self.fm = file_mgt.FileMgt()
+
+        self.is_import_previous_strategy = is_import_previous_strategy
 
     # initialise the running of ga
     ## the initialisation process that the developer does not want it to run when creating the ga instances, but run at the start of ga process
@@ -192,14 +207,14 @@ class GA:
             'elite_csv_filepath': self.elite_csv_filepath,
             'elite_json_filepath': self.elite_json_filepath,
         }
-        file_mgt.FileMgt.write_to_json(
+        self.fm.write_to_json(
             to_json_content=save_hyper_parameter_to_json_content, 
             filename=self.hyper_parameter_filename)
 
         # save the genome spec to JSON
         gene_spec = genome.Genome.get_gene_spec()
         gene_spec['run_id'] = str(self.run_id)
-        file_mgt.FileMgt.write_to_json(
+        self.fm.write_to_json(
             to_json_content=gene_spec, 
             filename=self.gene_spec_filename)
 
@@ -439,20 +454,77 @@ class GA:
             dna_filename = self.elite_csv_filepath + '/elite_gene_gen' + str(generation) + '_' + str(counter - 1) + '.csv'
             gene=copy.deepcopy(top_n_st[-counter].gene)
             gene=np.append(gene, self.run_id)
-            file_mgt.FileMgt.write_dna_to_csv(list_content=gene, csv_file_path=dna_filename)
+            self.fm.write_dna_to_csv(list_content=gene, csv_file_path=dna_filename)
 
             # saving the fittest gdict to JSON file
             gdict_filename = self.elite_json_filepath + '/elite_gdict_gen' + str(generation) + '_' + str(counter - 1) + '.json'
             gdict=copy.deepcopy(top_n_st[-counter].gdict)
             gdict['run_id'] = self.run_id
-            gdict['rewards'] = top_n_st[-counter].rewards
+            gdict['training_rewards'] = top_n_st[-counter].rewards
             gdict['fin_start'] = self.fin_start
             gdict['fin_end'] = self.fin_end
-            file_mgt.FileMgt.write_to_json(to_json_content=gdict, filename=gdict_filename)
+            self.fm.write_to_json(to_json_content=gdict, filename=gdict_filename)
 
             counter -= 1
 
         return top_n_st, all_rewards
+
+    # check any available previous elite strategy
+    # ask for importing the previous elite, if found
+    # input: (no input parameter)
+    # output:
+    # 1. st: the elite strategy
+    def import_elite_from_previous_run(
+            self, 
+            run_id_filename = 'CSV/run_id.csv'):
+        # check for any old elite
+        if not self.fm.check_file_exist(run_id_filename):
+            return None
+
+        run_id_record = self.fm.read_from_csv(run_id_filename)
+
+        if run_id_record is None or len(run_id_record) < 1:
+            return None
+
+        if len(run_id_record) == 1 and run_id_record[0].strip() == self.run_id.strip():
+            # if only 1 run_id was found, the run_id is the current run_id
+            return None
+        
+        if len(run_id_record) > 2:
+            for id in range(len(run_id_record)):
+                if run_id_record[id] != self.run_id:
+                    print('id: ', id, ', run_id: ', run_id_record[id].strip())
+            try:
+                # wait 60 seconds for the user to enter which strategy to import
+                user_input = inputimeout(prompt='Enter the <id> or <run_id> to import the previous strategy: (<id>, <run_id> or not to import) \n(60 seconds) >>\n', timeout=60)
+            except TimeoutOccurred:
+                print('Time is up. No strategy is imported')
+                return None
+            if user_input in range(len(run_id_record)):
+                import_run_id = run_id_record[user_input]
+            elif user_input in run_id_record:
+                for run in run_id_record:
+                    if user_input == run:
+                        import_run_id = run
+                        break
+            else:
+                print('Invalid id or strategy. No elite strategy is imported.\n')
+                return None
+        elif run_id_record[0].strip() is not None and run_id_record[0].strip() != self.run_id.strip():
+            import_run_id = run_id_record[0]
+        else:
+            # Elite strategy not found
+            return None
+
+        # import strategy
+        st, gdict = Chatbot.get_strategy(
+            run_id=import_run_id.strip()
+        )
+        if st is not None:
+            print('The elite from: ', import_run_id.strip(), ' was imported.\n')
+            return st
+        print('No elite strategy is imported.\n')
+        return None
 
     '''
     # the main body and workflow of GA
@@ -557,7 +629,20 @@ class GA:
         ## the initialisation process that the developer does not want it to run when creating the ga instances, but run at the start of ga process
         self.initialise_logs()
 
-        pop = population.Population(pop_size=self.pop_size, start_up_cash=self.start_up_cash)
+        if self.is_import_previous_strategy:
+            imported_st = self.import_elite_from_previous_run(
+                run_id_filename = self.run_id_filename
+            )
+            pop = population.Population(
+                pop_size=self.pop_size, 
+                start_up_cash=self.start_up_cash,
+                st=imported_st,
+                )
+        else:
+            pop = population.Population(
+                pop_size=self.pop_size, 
+                start_up_cash=self.start_up_cash
+                )
 
         # determine the number of threads based on user input
         if self.pool_size > 1:
@@ -569,13 +654,12 @@ class GA:
             print('Multi-threads:', self.pool_size)
 
             # initialise the financial data for multi-threads environment
-            my_api = api_fin_data.APIFinData()
-            symbols = my_api.get_symbol_from_csv(trading_date=self.fin_start)
+            symbols = self.my_api.get_symbol_from_csv(trading_date=self.fin_start)
 
             # pre-downloading any missing financial data for the running of simulations
             ## this helps prevent the error(s) of concurrent downloading of financial data in multi-threads environment
             for s in symbols:
-                my_api.get_financial_data(symbol=s, period_end=self.fin_end)
+                self.my_api.get_financial_data(symbol=s, period_end=self.fin_end)
         else:
             sim = simulation.Simulation(
                 fin_start=self.fin_start,

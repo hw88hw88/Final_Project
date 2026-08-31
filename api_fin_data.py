@@ -26,6 +26,7 @@ class APIFinData:
         with open(filename) as f:
             csv_str = f.read()
         lines = csv_str.split('\n')
+
         for line in range(len(lines)):
             # the first line is the heading
             if line == 0:
@@ -41,12 +42,15 @@ class APIFinData:
             if (pd.Timestamp(tickers[0]) < pd.Timestamp(trading_date) and 
                 line < len(lines) - 1):
                 continue
+
             # split the line of content
-            ## the [line - 1] below means using the tickers just before the start of the financial period
-            tickers = lines[line - 1].split(',')
-            ## if the <trading_date> was after the last date on the list, use the symbols of the last date on the list
-            if line == len(lines) - 1:
+
+            ## if the <trading_date> was the same as the trading date, use the trading date
+            if pd.Timestamp(tickers[0]) == pd.Timestamp(trading_date):
                 tickers = lines[line].split(',')
+            else:
+                ## the [line - 1] below means using the tickers before the <trading_date>, because there was no change to the list of S&P500 stocks
+                tickers = lines[line - 1].split(',')
             # return the first line of raw data on or after financial period
             for ticker in range(len(tickers)):
                 # skip the date element
