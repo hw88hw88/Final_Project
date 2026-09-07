@@ -16,8 +16,12 @@ class TestSimulation(unittest.TestCase):
         self.assertIsNotNone(sim.sorting_stocks)
         self.assertIsNotNone(sim.get_stock_fin_indicator)
         self.assertIsNotNone(sim.run_strategy)
+        self.assertIsNotNone(sim.find_first_last_trading_date)
+        self.assertIsNotNone(sim.eval_population)
 
     # test if functions return something
+    # testing "calculate_fin_indicator_for_stock()"
+    # testing "sorting_stocks()"
     def test_function_returns(self):
         sim=simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
         st=strategy.Strategy(start_up_cash=100000)
@@ -37,6 +41,8 @@ class TestSimulation(unittest.TestCase):
         self.assertIsNotNone(sorting_stocks)
 
     # test if the functions return correct data type
+    # testing "calculate_fin_indicator_for_stock()"
+    # testing "sorting_stocks()"
     def test_function_return_type(self):
         sim=simulation.Simulation(fin_start='2020-01-01', fin_end='2020-01-31', trading_fee=0.01)
         st=strategy.Strategy(start_up_cash=100000)
@@ -55,6 +61,8 @@ class TestSimulation(unittest.TestCase):
         self.assertEqual(str(type(sorted_stocks)), "<class 'list'>")
 
     # test if the returned value is correct
+    # testing "calculate_fin_indicator_for_stock()"
+    # testing "sorting_stocks()"
     def test_function_return_value(self):
         fin_start='2020-01-01'
         fin_end='2020-01-31'
@@ -125,4 +133,25 @@ class TestSimulation(unittest.TestCase):
         )
         self.assertIsNotNone(df)
         self.assertEqual(str(type(df)), "<class 'list'>")
+
+    # test find_first_last_trading_date()
+    def test_find_first_last_trading_date(self):
+        fin_start='2020-01-01'
+        fin_end='2020-01-31'
+        sim=simulation.Simulation(fin_start=fin_start, fin_end=fin_end, trading_fee=0.01)
+        st=strategy.Strategy(start_up_cash=100000)
+        df_score=sim.calculate_fin_indicator_for_stock(st=st, symbol='MSFT')
+        df_score2=sim.calculate_fin_indicator_for_stock(st=st, symbol='AAPL')
+        stocks_df=[df_score, df_score2]
+
+        first_trading_date, last_trading_date = sim.find_first_last_trading_date(
+            stocks_df=stocks_df
+        )
+
+        self.assertIsNotNone(first_trading_date)
+        self.assertIsNotNone(last_trading_date)
+        self.assertEqual(str(type(first_trading_date)), "<class 'pandas.Timestamp'>")
+        self.assertLess(pd.Timestamp(first_trading_date), pd.Timestamp(last_trading_date))
+
+
 

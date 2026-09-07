@@ -5,6 +5,7 @@ import pandas as pd
 import datetime
 import re
 import json
+import numpy as np
 
 from llama_cpp import Llama
 
@@ -14,7 +15,9 @@ class Chatbot:
     def initialize_chatbot(
         self,
         model_path = "LLM/gemma-4-E2B-it-qat-q4_0-gguf/gemma-4-E2B_q4_0-it.gguf"
+        # model_path = "LLM/Phi-3-mini-4k-instruct-q4.gguf"
         ):
+        self.max_token=4096
         ## loading the LLM
         self.llm = Llama(
             model_path=model_path, 
@@ -56,8 +59,8 @@ class Chatbot:
                 if num_of_run < len(csv_content):
                     run_id = csv_content[num_of_run]
                 else:
-                    print('<num_of_run> out of range. It has been set to 0.')
-                    run_id = csv_content[0]
+                    print('<num_of_run> out of range. It has been set to the last one.')
+                    run_id = csv_content[-1]
                 return run_id
             else:
                 print('There is no <run_id>. Please run the training first.')
@@ -122,7 +125,7 @@ class Chatbot:
     # 2. st: investment strategy instance
     # 3. trading_fee: e.g. 0.01 means 1% of the trading amount
     # output:
-    # 1. a list of data frame of all stocks
+    # 1. stocks_df: a list of data frame of all stocks
     @staticmethod
     def get_data(
             trading_date,
@@ -193,7 +196,7 @@ class Chatbot:
         run_id = self.get_run_id(
             num_of_run = num_of_run,
             run_id_file_path = run_id_file_path,
-            )
+        )
 
         st, gdict = self.get_strategy(
             run_id = run_id,
@@ -245,40 +248,18 @@ class Chatbot:
 
     # generate the chatbot response
     # input:
-    # 1. portfolio
-    # 2. portfolio_dict
-    # 3. trading_date
+    # 1. prompt
     # output:
     # 1. output: the text output of the LLM
-    def generate_advice(self, portfolio, portfolio_dict, trading_date):
+    def generate_response(self, prompt):
         # initialize the chatbot at the first time of running
         if getattr(self, 'llm', None) is None:
             self.initialize_chatbot()
 
-        # prepare the prompt
-        prompt = f"""
-        You are a professional financial advisor. I am a system analyzing the S&P 500 stocks to generate an investment portfolio containing the stock(s) {portfolio} to the user.
-        """
-
-        for p in portfolio:
-            prompt = prompt + f"""
-                stock: {portfolio_dict.get(p).get('symbol')}
-                Price on {trading_date}: {portfolio_dict.get(p).get('price')}
-                Financial indicators:
-                Short SMA = {portfolio_dict.get(p).get('ma_short')}
-                Long SMA = {portfolio_dict.get(p).get('ma_long')}
-                RSI = {portfolio_dict.get(p).get('rsi')}
-                Sharpe ratio = {portfolio_dict.get(p).get('sharpe_ratio')}
-            """
-
-        prompt = prompt + """
-            Please provide investment recommendations to the user. Explain the recommendations based on the financial indicators provided. Please reply to the user on behalf of me directly and do not quote me.
-            """
-
         try:
             output = self.llm(
                 'User: ' + prompt + '. Assistant: ',
-                max_tokens=10240,
+                max_tokens=self.max_token,
                 stop=["User:"],
                 echo=False
             )
@@ -312,11 +293,12 @@ class Chatbot:
         1. greeting: boolean (true if the user says hello, hi, etc.)
         2. investment: boolean (true if the user expresses intent to invest)
         3. investment_explanation: boolean (true if the user ask for explanation of recommendations)
-        4. prefer_low_risk: boolean (true if the user mentions safety, or conservative goals)
+        4. prefer_low_risk: string (balanced or high or low, null if not mentioned)
         5. investment_date: string ('yyyy-mm-dd' or null).
         - If no date is mentioned: null.
         - If a future date is mentioned: {today_date}.
-        - If a past date is mentioned: that specific date.
+        - If a past date is mentioned: that specific date (that specific date must be on or after '2025-01-01').
+        - If the date is before '2025-01-01': '2025-01-01'.
 
         Example Output Format:
         {{"greeting": false, "investment": true, "investment_explanation": false, "prefer_low_risk": false, "investment_date": null}}
@@ -328,7 +310,7 @@ class Chatbot:
         try:
             output = self.llm(
                 'User: ' + prompt + '. Assistant: ',
-                max_tokens=200,
+                max_tokens=self.max_token,
                 stop=["User:"],
                 echo=False,
                 temperature=0,
@@ -341,10 +323,142 @@ class Chatbot:
             response = re.search(r'\{.*\}', raw_response, re.S)
             if response:
                 return json.loads(response.group())
-            return {"greeting": False, "investment": False, "investment_explanation": False, "prefer_low_risk": False, "investment_date": None, "error": "Invalid response", "raw_response": raw_response}
+            return {"greeting": False, "investment": False, "investment_explanation": False, "prefer_low_risk": None, "investment_date": None, "error": "Invalid response", "raw_response": raw_response}
         except Exception as e:
             print('Error: ', e)
-            return {"greeting": False, "investment": False, "investment_explanation": False, "prefer_low_risk": False, "investment_date": None, "error": str(e), "raw_response": raw_response}
+            return {"greeting": False, "investment": False, "investment_explanation": False, "prefer_low_risk": None, "investment_date": None, "error": str(e), "raw_response": raw_response}
 
-    def generate_custom_response(self, stock, fin_indicators):
-        pass
+    # classify the types of response to be generated
+    # input:
+    # 1. user_prompt_dict: a dict generated with identify_user_input()
+    # 2. run_id_file_path: the file path of run_id CSV
+    # 3. hyper_params_file_path: the file path of hyper-parameters
+    # 4. gdict_file_path: the file path of the gdict file
+    # output:
+    # 1. prompt: (str) a prompt to LLM to generate response
+    def classify_response(
+        self, 
+        user_prompt_dict,
+        run_id_file_path = 'CSV/run_id.csv',
+        hyper_params_file_path = None,
+        gdict_file_path = None,
+        ):
+        # default: balanced profile
+        num_of_run = 0
+        
+        # determining the strategy based on the risk level
+        if user_prompt_dict.get('prefer_low_risk') == 'low':
+            # low risk profile
+            num_of_run = 1
+        elif user_prompt_dict.get('prefer_low_risk') == 'high':
+            # high return and high risk profile
+            num_of_run = 2
+
+        # get investment date
+        investment_date = None
+        if user_prompt_dict.get('investment_date'):
+            investment_date = user_prompt_dict.get('investment_date')
+        else:
+            today_date = datetime.datetime.now()
+            investment_date = today_date.strftime('%Y-%m-%d')
+
+        # type 1 response:
+        # identify if user mentioned investment
+        if user_prompt_dict.get('investment_explanation'):
+            # get investment portfolio with detailed explanation
+            portfolio, portfolio_dict, st, gdict = self.apply_strategy(
+                trading_date = investment_date,
+                num_of_run = num_of_run,
+                trading_fee = 0.01,
+                run_id_file_path = run_id_file_path,
+                hyper_params_file_path=hyper_params_file_path,
+                gdict_file_path=gdict_file_path,
+            )
+            prompt = self.generate_prompt(
+                type = 1, 
+                portfolio = portfolio, 
+                portfolio_dict = portfolio_dict, 
+                trading_date= investment_date,
+                gdict=gdict,
+            )
+        # type 2 response:
+        elif user_prompt_dict.get('investment'):
+            # get investment portfolio
+            portfolio, portfolio_dict, st, gdict = self.apply_strategy(
+                trading_date = investment_date,
+                num_of_run = num_of_run,
+                trading_fee = 0.01,
+                run_id_file_path = run_id_file_path,
+                hyper_params_file_path=hyper_params_file_path,
+                gdict_file_path=gdict_file_path,
+            )
+            prompt = self.generate_prompt(
+                type = 2, 
+                portfolio = portfolio, 
+                portfolio_dict = portfolio_dict, 
+                trading_date = investment_date,
+                gdict=gdict,
+            )
+
+        # type 3 response:
+        # greeting and introduce the financial advisor services to the user
+        else:
+            prompt = self.generate_prompt()
+        return prompt
+
+    # generate the prompt based on the classified sponse type
+    # input:
+    # 1. type: the type of response (e.g. about investment, about investment explanation, or greeting)
+    def generate_prompt(
+            self,
+            type=None, 
+            portfolio=None, 
+            portfolio_dict=None, 
+            trading_date=None,
+            gdict=None,
+            ):
+        # type 1:
+        # explain the investment portfolio and strategy clearly
+        if type == 1:
+            if portfolio is None or portfolio_dict is None or trading_date is None or gdict is None:
+                return None
+            # prepare the prompt
+            prompt = f"""
+            As a professional financial advisor, you need to make recommendations based on the investment portfolio containing the stock(s) {portfolio} to the user on {trading_date}.
+            """
+
+            for p in portfolio:
+                prompt = prompt + f"""
+                    stock: {portfolio_dict.get(p).get('symbol')}
+                    Price on {trading_date}: {np.round(portfolio_dict.get(p).get('price'), 2)}
+                    Financial indicators:
+                    SMA Short: {np.round(portfolio_dict.get(p).get('ma_short'), 2)} ({gdict.get('ma_short')} days)
+                    SMA Long: {np.round(portfolio_dict.get(p).get('ma_long'), 2)} ({gdict.get('ma_long')} days)
+                    RSI: {np.round(portfolio_dict.get(p).get('rsi'), 2)} ({gdict.get('rsi_period')} day(s))
+                    Sharpe ratio: {np.round(portfolio_dict.get(p).get('sharpe_ratio'), 2)}
+                """
+
+            prompt = prompt + """
+                Please provide investment recommendations to the user. Explain the recommendations based on the financial indicators provided.
+                Your response should include:
+                the price, simple moving average, RSI, and Sharpe ratio for each stock in the portfolio.
+                Please reply to the user on behalf of me directly and do not quote me.
+                Please reply with text in HTML format without any interactive elements.
+                """
+        # type 2:
+        elif type == 2:
+            if portfolio is None or trading_date is None:
+                return None
+            # prepare the prompt
+            prompt = f"""
+            You are a professional financial advisor. You need to briefly introduce an investment portfolio containing the stock(s) {portfolio} on {trading_date} to the user. You do not need to analyze or explain the portfolio.
+            Please reply to the user on behalf of me directly and do not quote me. Please reply with text in HTML format without any interactive elements.
+            """
+        # type 3:
+        else:
+            # prepare the prompt
+            prompt = """
+            You are a professional financial advisor. You need to make investment recommendations to the users. The investment recommendation is an investment portfolio on a trading day. The portfolio was built based on the investment strategy generated with the system. You need to ask the user(s) their risk tolerance level (high, low, or balanced), and the date of investment. The date should be between 2025-01-01 and today. Also, you need to inform the users that they can ask the investment portfolio and its explanation. Please reply with text in HTML format without any interactive elements.
+            """
+
+        return prompt

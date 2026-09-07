@@ -16,9 +16,10 @@ class TestChatbot(unittest.TestCase):
         self.assertIsNotNone(chatbot.Chatbot.get_data)
         self.assertIsNotNone(chatbot.Chatbot.get_investment_portfolio)
         self.assertIsNotNone(chatbot.Chatbot.apply_strategy)
-        self.assertIsNotNone(chatbot.Chatbot.generate_advice)
-        self.assertIsNotNone(chatbot.Chatbot.generate_custom_response)
+        self.assertIsNotNone(chatbot.Chatbot.generate_prompt)
+        self.assertIsNotNone(chatbot.Chatbot.classify_response)
         self.assertIsNotNone(chatbot.Chatbot.identify_user_input)
+        self.assertIsNotNone(chatbot.Chatbot.generate_response)
 
     # test the get_strategy()
     def test_get_strategy(self):
@@ -130,7 +131,7 @@ class TestChatbot(unittest.TestCase):
     # test apply_strategy()
     def test_apply_strategy(self):
         # create testing run_id
-        test_run_id = 'unittest'
+        test_run_id = 'unittest, unittest, unittest'
         bot = chatbot.Chatbot()
         fm = file_mgt.FileMgt()
 
@@ -168,7 +169,7 @@ class TestChatbot(unittest.TestCase):
 
         #  test apply_strategy()
         portfolio, portfolio_dict, st, gdict = bot.apply_strategy(
-            trading_date='2023-01-31',
+            trading_date='2026-08-31',
             num_of_run = 0,
             trading_fee = 0.01,
             run_id_file_path = run_id_file_path,
@@ -185,11 +186,57 @@ class TestChatbot(unittest.TestCase):
         self.assertGreater(len(list(portfolio_dict.keys())), 0)
         self.assertEqual(gdict, st.gdict)
 
-    # test generate_advice()
-    def test_generate_advice(self):
-        trading_date='2023-01-31'
+        # remove test files
+        os.remove(test_hyper_params_file)
+        os.remove(test_gdict_file)
+        os.remove(run_id_file_path)
+
+    # test identify_user_input()
+    def test_identify_user_input(self):
+        bot = chatbot.Chatbot()
+        user_prompt=[
+            "I would like to invest my money. Please give me advice.",
+            "Please explain your recommendations.",
+            "I'm bored.",
+            "How to calculate 1+1?",
+            "My birthday is on 1 January 2030",
+            "Tell me your recommendations yesterday.",
+            "I prefer high return but low risk.",
+            "I can assume high risk."
+            ]
+
+        result = []
+        for user_p in user_prompt:
+            raw_output = bot.identify_user_input(user_prompt=user_p)
+            response = raw_output
+            self.assertIsNotNone(response)
+            self.assertEqual(str(type(response)), "<class 'dict'>")
+            self.assertIsNone(response.get('error'))
+            result.append(response)
+        self.assertEqual(len(result), len(user_prompt))
+        self.assertTrue(result[0].get('investment'))
+        self.assertTrue(result[0].get('investment_explanation'))
+        self.assertFalse(result[1].get('investment'))
+        self.assertTrue(result[1].get('investment_explanation'))
+        self.assertFalse(result[2].get('investment'))
+        self.assertFalse(result[2].get('investment_explanation'))
+        self.assertFalse(result[3].get('investment'))
+        self.assertFalse(result[3].get('investment_explanation'))
+        self.assertFalse(result[4].get('investment'))
+        self.assertFalse(result[4].get('investment_explanation'))
+        self.assertIsNotNone(result[5].get('investment_date'))
+        self.assertFalse(result[5].get('investment'))
+        self.assertTrue(result[5].get('investment_explanation'))
+        self.assertEqual(result[6].get('prefer_low_risk'), 'low')
+        self.assertFalse(result[6].get('investment'))
+        self.assertFalse(result[6].get('investment_explanation'))
+        self.assertEqual(result[7].get('prefer_low_risk'), 'high')
+
+    # test classify_response()
+    def test_classify_response(self):
+        # preparing for the test file
         # create testing run_id
-        test_run_id = 'unittest'
+        test_run_id = 'unittest, unittest, unittest'
         bot = chatbot.Chatbot()
         fm = file_mgt.FileMgt()
 
@@ -219,13 +266,75 @@ class TestChatbot(unittest.TestCase):
             filename=test_hyper_params_file
         )
 
-        ## create gdict file
+        ## test gdict file
         fm.write_to_json(
             to_json_content=test_gdict,
             filename=test_gdict_file,
         )
 
-        #  run apply_strategy() to get the input arguments
+        # get the date of trading day
+        user_prompt_dict = bot.identify_user_input(user_prompt='I have money to invest.')
+        prompt = bot.classify_response(
+            user_prompt_dict=user_prompt_dict,
+            run_id_file_path=run_id_file_path,
+            hyper_params_file_path=test_hyper_params_file,
+            gdict_file_path=test_gdict_file,
+        )
+
+        self.assertIsNotNone(prompt)
+        self.assertEqual(str(type(prompt)), "<class 'str'>")
+
+    # test generate_response()
+    def test_generate_response(self):
+        bot = chatbot.Chatbot()
+        response = bot.generate_response(
+            prompt='hi'
+        )
+        self.assertIsNotNone(response)
+        self.assertEqual(str(type(response)), "<class 'str'>")
+        self.assertGreater(len(response), 5)
+
+# test generate_prompt()
+    def test_generate_prompt(self):
+        # create testing run_id
+        trading_date='2026-08-31'
+        test_run_id = 'unittest, unittest, unittest'
+        bot = chatbot.Chatbot()
+        fm = file_mgt.FileMgt()
+
+        # write run_id to a test file
+        run_id_file_path='CSV/unittest_run_id.csv'
+        fm.write_csv(csv_file_path=run_id_file_path, to_csv_content=test_run_id)
+
+        # create a testing strategy
+        g = genome.Genome()
+        spec=g.get_gene_spec()
+        
+        test_gdict = g.get_gdict(
+            gene=g.get_random_gene(gene_length=len(spec)),
+            spec=spec
+            )
+        spec['run_id'] = str(test_run_id)
+        test_gdict['run_id'] = str(test_run_id)
+
+        # test file path
+        test_hyper_params_file = 'JSON/unittest_hyper_parameter.json'
+        test_gdict_file = 'JSON/unittest_gdict.json'
+
+        # create test files
+        ## test_hyper-parameters file
+        fm.write_to_json(
+            to_json_content={'num_of_generations': 50},
+            filename=test_hyper_params_file
+        )
+
+        ## test gdict file
+        fm.write_to_json(
+            to_json_content=test_gdict,
+            filename=test_gdict_file,
+        )
+
+        #  test apply_strategy()
         portfolio, portfolio_dict, st, gdict = bot.apply_strategy(
             trading_date=trading_date,
             num_of_run = 0,
@@ -234,39 +343,60 @@ class TestChatbot(unittest.TestCase):
             hyper_params_file_path=test_hyper_params_file,
             gdict_file_path=test_gdict_file
         )
+        
+        # type 1:
+        generated_prompt = bot.generate_prompt(
+            type=1, 
+            portfolio=None, 
+            portfolio_dict=None, 
+            trading_date=None,
+            gdict=None,
+        )
+        self.assertIsNone(generated_prompt)
 
-        chatbot_response = bot.generate_advice(
-            portfolio=portfolio,
-            portfolio_dict=portfolio_dict,
-            trading_date=trading_date
+        generated_prompt = bot.generate_prompt(
+            type=1, 
+            portfolio=portfolio, 
+            portfolio_dict=portfolio_dict, 
+            trading_date=trading_date,
+            gdict=gdict,
         )
 
-        self.assertIsNotNone(chatbot_response)
-        self.assertGreater(len(chatbot_response), 0)
-        self.assertEqual(str(type(chatbot_response)), "<class 'str'>")
-        print(chatbot_response)
+        self.assertIsNotNone(generated_prompt)
+        self.assertEqual(str(type(generated_prompt)), "<class 'str'>")
+        self.assertGreater(len(generated_prompt), 10)
 
-    # test identify_user_input()
-    def test_identify_user_input(self):
-        bot = chatbot.Chatbot()
-        user_prompt=[
-            "I would like to invest my money. Please give me advice.",
-            "Please explain your recommendations.",
-            "I'm bored.",
-            "How to calculate 1+1?",
-            "My birthday is on 1 January 2030",
-            "Tell me your recommendations yesterday.",
-            "I prefer high return but low risk.",
-            ]
+        # type 2:
+        generated_prompt = bot.generate_prompt(
+            type=2, 
+            portfolio=None, 
+            portfolio_dict=None, 
+            trading_date=None,
+            gdict=gdict,
+        )
+        self.assertIsNone(generated_prompt)
 
-        for user_p in user_prompt:
-            raw_output = bot.identify_user_input(user_prompt=user_p)
-            response = raw_output
-            self.assertIsNotNone(response)
-            self.assertEqual(str(type(response)), "<class 'dict'>")
-            self.assertIsNone(response.get('error'))
+        generated_prompt = bot.generate_prompt(
+            type=2,
+            portfolio=portfolio, 
+            portfolio_dict=portfolio_dict, 
+            trading_date=trading_date,
+            gdict=gdict,
+        )
 
-    # test generate_custom_response()
-    def test_generate_custom_response(self):
-        pass
+        self.assertIsNotNone(generated_prompt)
+        self.assertEqual(str(type(generated_prompt)), "<class 'str'>")
+        self.assertGreater(len(generated_prompt), 10)
 
+        # type 3:
+        generated_prompt = bot.generate_prompt(
+            type=None, 
+            portfolio=None, 
+            portfolio_dict=None, 
+            trading_date=None,
+            gdict=gdict,
+        )
+        self.assertIsNotNone(generated_prompt)
+        self.assertEqual(str(type(generated_prompt)), "<class 'str'>")
+        self.assertGreater(len(generated_prompt), 10)
+        

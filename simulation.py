@@ -103,10 +103,10 @@ class Simulation:
         sell_signal=sell_ma_signal+sell_rsi_signal
 
         # score for the stock
-        data['signal_score']=buy_signal-sell_signal
+        data['signal_score'] = buy_signal-sell_signal
 
         ## the shift of 1 row of closing price prevents look ahead bias
-        data['daily_returns']=data['Close'].shift(periods=1, axis=0).pct_change()
+        data['daily_returns'] = data['Close'].shift(periods=1, axis=0).pct_change()
 
         # calculating the Sharpe ratio for the stock
 
@@ -119,6 +119,7 @@ class Simulation:
         data['sharpe_ratio'] = (data['annualized_return'] - risk_free_interest_rate) / data['annualized_volatility']
 
         # if the period is a day, the start day will be the last trading day on or before the period end
+        # Otherwise, the dataframe would be empty
         if self.fin_start == self.fin_end:
             pd_start = self.api.get_nth_date(data.copy(), n=-1)
 
@@ -127,6 +128,38 @@ class Simulation:
 
         # return the data frame with scores of each stock
         return data
+
+    # find the first and last trading from the dataframe of all available stocks
+    # input:
+    # 1. stocks_df: dataframe of all stocks
+    # output:
+    # 1. first_trading_date: the first trading date of the stocks
+    # 2. last_trading_date: the last trading date of the stocks
+    def find_first_last_trading_date(
+        self,
+        stocks_df,
+    ):
+        first_trading_date = None
+        last_trading_date = None
+
+        for s in stocks_df:
+            first_date = self.api.get_nth_date(
+                df=s,
+                n=0
+            )
+            last_date = self.api.get_nth_date(
+                df=s,
+                n=-1
+            )
+            if first_trading_date is None:
+                first_trading_date = first_date
+            elif pd.Timestamp(first_date) < pd.Timestamp(first_trading_date):
+                first_trading_date = first_date
+            if last_trading_date is None:
+                last_trading_date = last_date
+            elif pd.Timestamp(last_date) > pd.Timestamp(last_trading_date):
+                last_trading_date = last_date
+        return first_trading_date, last_trading_date
 
     # sorting the available stocks on a specified data
     # input:
@@ -139,10 +172,21 @@ class Simulation:
         # store the selected stocks
         selected_stocks={}
 
+        # find the first and last trading date of all stocks in stocks_df
+        first_trading_date, last_trading_date = self.find_first_last_trading_date(stocks_df)
+
+        # the date_timestamp must be within the first and last trading date
+        date_timestamp = min(pd.Timestamp(date_timestamp), pd.Timestamp(last_trading_date))
+        date_timestamp = max(pd.Timestamp(date_timestamp), pd.Timestamp(first_trading_date))
+
         # iterate the stocks to select the stocks and their signal score
         for s in stocks_df:
             # select the current trading day (a day)
             stock=s.loc[(s.index == date_timestamp)]
+
+            # ignore the stock if the data is empty
+            if len(stock) < 1:
+                continue
 
             # convert to python dict{}
             stock_dict = stock.to_dict()

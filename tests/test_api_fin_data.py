@@ -4,6 +4,7 @@
 import unittest
 import api_fin_data
 import os
+import datetime
 
 class TestAPIFinData(unittest.TestCase):
     # test if the class, variables and functions can be created successfully or not
@@ -100,7 +101,7 @@ class TestAPIFinData(unittest.TestCase):
         get_fin_data=api_fin_data.APIFinData()
         # the beginning of financial period used in unittesting, and testing,
         ## and the beginning commonly used in training and validation
-        fin_start = ['2020-01-01', '2020-12-01', '2021-01-01', '2025-01-01', '2023-01-01', '2024-01-01']
+        fin_start = ['2020-01-01', '2020-12-01', '2021-01-01', '2025-01-01', '2023-01-01', '2024-01-01', '2026-01-01']
 
         # the 
         downloadable = []
@@ -110,8 +111,11 @@ class TestAPIFinData(unittest.TestCase):
         for fin_s in fin_start:
             symbols = get_fin_data.get_symbol_from_csv(fin_s)
 
+            today_date = datetime.datetime.now()
+            today_date = today_date.strftime('%Y-%m-%d')
+
             for s in symbols:
-                data=get_fin_data.get_financial_data(symbol=s, period_end='2026-06-30')
+                data=get_fin_data.get_financial_data(symbol=s, period_end=today_date)
                 if data is None:
                     undownloadable.append(s)
                 else:

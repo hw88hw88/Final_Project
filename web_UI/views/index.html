@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" >
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="keywords" content="howa, space, chatbot, financial, financial advisor">
+        <meta name="author" content="howa.space, SRN: 200212427 of the University of London">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" type="text/css" href="/style/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="/style/myStyle.css" />
+        <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+        <script src="/script/m_view.js" defer></script>    
+        <script src="/script/live_query.js" defer></script>
+        <title>Home - Financial Advisor Chatbot</title>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div id="menu_button">
+                    Menu
+                </div>
+                <div id="menu">
+                    <a href="/">🏠Home</a>
+                </div>
+            </nav>
+        </header>
+        <div class="grid-container">
+            <main>
+                <h1>Financial Advisor Chatbot</h1>
+                <div id="response"></div>
+                <br>
+                <textarea id="query" rows="5" cols="40" value="" placeholder="Your query..."></textarea>
+                <br>
+                <button id="enter">Enter</button>
+                <button id="clear">Clear All</button>
+                <br>
+                <p>
+                    The model is under <a href="LICENSE.txt">Apache License 2.0</a>.
+                </p>
+                <p hidden id="sender"><%=sender%></p>
+            </main>
+        </div>
+    </body>
+    <footer>
+        <div>
+            <a href="/about">About</a>
+        </div>
+        <div id="copyright">
+            <p>© 2026 Student No.: 200212427 of the University of London</a></p>            
+        </div>
+    </footer>
+</html>
