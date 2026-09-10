@@ -486,7 +486,7 @@ class Strategy:
                            + 0.05 * reward_win_rate
                            + 0.7 * reward_sharpe_ratio
                            - 0.05 * penalty_num_of_trade
-                           - 0.3 * penalty_max_drawdown))
+                           - 0.6 * penalty_max_drawdown))
 
         # heavy penalty:
         # penalty 3:

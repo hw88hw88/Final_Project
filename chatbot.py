@@ -15,7 +15,6 @@ class Chatbot:
     def initialize_chatbot(
         self,
         model_path = "LLM/gemma-4-E2B-it-qat-q4_0-gguf/gemma-4-E2B_q4_0-it.gguf"
-        # model_path = "LLM/Phi-3-mini-4k-instruct-q4.gguf"
         ):
         self.max_token=4096
         ## loading the LLM

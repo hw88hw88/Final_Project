@@ -32,6 +32,7 @@ def chatbot_api():
             sender = sender.replace(' ', '_')
             sender = sender.replace(':', '-')
 
+        print('\nidentifying user input')
         # understanding the prompt
         user_prompt_dict = bot.identify_user_input(
             user_prompt=message
@@ -59,16 +60,18 @@ def chatbot_api():
         else:
             user_background[sender] = user_prompt_dict
 
+        print('\nclassifying response')
         # classifying the prompt into categories
         prompt = bot.classify_response(
             user_prompt_dict=user_background[sender],
             run_id_file_path = 'CSV/run_id.csv'
         )
 
+        print('\ngenerating response')
         chatbot_response = bot.generate_response(
             prompt=prompt
         )
-
+        print('\nreturning...')
         return (
             {
                 'sender' : sender,

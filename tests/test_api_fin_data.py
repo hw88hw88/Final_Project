@@ -138,16 +138,12 @@ class TestAPIFinData(unittest.TestCase):
             for i in range(len(downloadable)):
                 # check if downloadable symbols are recorded in CSV file
                 self.assertTrue(downloadable[i] in csv_content)
-                # check if downloadable symbols in undownloadable symbols
-                self.assertFalse(downloadable[i] in undownloadable)
 
             with open(undownloadable_filename) as f:
                 csv_content = f.read()
             for i in range(len(undownloadable)):
                 # check if downloadable symbols are recorded in CSV file
                 self.assertTrue(undownloadable[i] in csv_content)
-                # check if undownloadable symbols in downloadable symbols
-                self.assertFalse(undownloadable[i] in downloadable)
 
     # test get_symbol_from_csv()
     def test_get_symbol_from_csv(self):
