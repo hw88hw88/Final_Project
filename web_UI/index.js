@@ -11,12 +11,6 @@ try
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
 
-  // Error handler middleware
-  app.use((err, req, res, next) => {
-    console.error(err.stack); // Log the stack trace to the console
-    res.status(500).send('Something went wrong!'); // Send a custom error message to the client
-  });
-
   require("./routes/main")(app);
   app.use(express.static("./public"));
   app.use("/img", express.static(__dirname + "public/img/"));

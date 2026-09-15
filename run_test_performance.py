@@ -11,7 +11,7 @@ num_of_run = 0
 
 ## the testing period
 testing_fin_start = '2025-01-01'
-testing_fin_end = '2025-12-31'
+testing_fin_end = '2026-06-30'
 
 
 run_id = Chatbot.get_run_id(num_of_run=num_of_run)

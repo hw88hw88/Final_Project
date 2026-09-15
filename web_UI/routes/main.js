@@ -44,9 +44,9 @@ module.exports = (app) =>
     /**************************************************** */
 
     app.post("/", (req, res, next) => {
-      const send_to_flask = require('./api_flask.js');
+      const send_to_chatbot = require('./api_flask.js');
       const chatbot_response = async () => {
-        const response = await send_to_flask.send_to_chatbot(req.body);
+        const response = await send_to_chatbot.send_to_chatbot(req.body);
         return res.send({
           "text": response.text,
           "sender": response.sender,

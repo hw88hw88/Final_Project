@@ -18,6 +18,7 @@ class TestSimulation(unittest.TestCase):
         self.assertIsNotNone(sim.run_strategy)
         self.assertIsNotNone(sim.find_first_last_trading_date)
         self.assertIsNotNone(sim.eval_population)
+        self.assertIsNotNone(sim.find_nth_date_from_stocks)
 
     # test if functions return something
     # testing "calculate_fin_indicator_for_stock()"
@@ -151,7 +152,32 @@ class TestSimulation(unittest.TestCase):
         self.assertIsNotNone(first_trading_date)
         self.assertIsNotNone(last_trading_date)
         self.assertEqual(str(type(first_trading_date)), "<class 'pandas.Timestamp'>")
+        self.assertEqual(str(type(last_trading_date)), "<class 'pandas.Timestamp'>")
         self.assertLess(pd.Timestamp(first_trading_date), pd.Timestamp(last_trading_date))
 
+    # test find_nth_date_from_stocks()
+    def test_find_nth_date_from_stocks(self):
+        fin_start='2020-01-01'
+        fin_end='2020-01-31'
+        sim=simulation.Simulation(fin_start=fin_start, fin_end=fin_end, trading_fee=0.01)
+        st=strategy.Strategy(start_up_cash=100000)
+        df_score=sim.calculate_fin_indicator_for_stock(st=st, symbol='MSFT')
+        df_score2=sim.calculate_fin_indicator_for_stock(st=st, symbol='AAPL')
+        stocks_df=[df_score, df_score2]
 
+        trading_date, df = sim.find_nth_date_from_stocks(
+            stocks_df=stocks_df,
+            n=0
+            )
 
+        self.assertIsNotNone(trading_date)
+        self.assertEqual(str(type(trading_date)), "<class 'pandas.Timestamp'>")
+        self.assertGreaterEqual(pd.Timestamp(trading_date), pd.Timestamp(fin_start))
+
+        trading_date, df = sim.find_nth_date_from_stocks(
+            stocks_df=stocks_df,
+            n=-1
+            )
+        self.assertIsNotNone(trading_date)
+        self.assertEqual(str(type(trading_date)), "<class 'pandas.Timestamp'>")
+        self.assertLessEqual(pd.Timestamp(trading_date), pd.Timestamp(fin_end))

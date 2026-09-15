@@ -161,6 +161,28 @@ class Simulation:
                 last_trading_date = last_date
         return first_trading_date, last_trading_date
 
+    # find the nth trading date in a set of stocks in the financial period
+    # input:
+    # 1. stocks_df
+    # 2. n
+    # output:
+    # 1. the date of the nth day
+    # 2. None if there is no stock starts on or before the start of the financial period and ends on or after the end of the financial period
+    def find_nth_date_from_stocks(
+        self,
+        stocks_df,
+        n
+    ):
+        first_trading_date, last_trading_date = self.find_first_last_trading_date(
+            stocks_df=stocks_df
+        )
+        # determine the date of the nth day
+        for sd in stocks_df:
+            # use the stock which could be traded in the financial period
+            if pd.Timestamp(self.api.get_nth_date(sd, n=0)) == pd.Timestamp(first_trading_date) and pd.Timestamp(self.api.get_nth_date(sd, n=-1)) == pd.Timestamp(last_trading_date):
+                return pd.Timestamp(self.api.get_nth_date(sd, n=n)), sd.copy()
+        return None
+
     # sorting the available stocks on a specified data
     # input:
     # 1. date_timestamp: store date of the current round in the format of pandas timestamp
@@ -238,9 +260,11 @@ class Simulation:
     # 1. st: an investment strategy instance
     # output:
     # 2. stocks_df: A list of data frame of all the stocks in the financial period
-    def get_stock_fin_indicator(self, st):
+    def get_stock_fin_indicator(self, st, trading_date=None):
+        if trading_date is None:
+            trading_date = self.fin_start
         # get the symbol of available stocks in S&P500
-        available_symbols=self.api.get_symbol_from_csv(trading_date=self.fin_start)
+        available_symbols=self.api.get_symbol_from_csv(trading_date=trading_date)
 
         # store the market data and the calculation of the financial indicators of each stock. The financial indicators were calculated based on the parameters in the strategy
         stocks_df=[]
@@ -344,25 +368,40 @@ class Simulation:
     # 2. call other methods to print the result on screen, and save the result to JSON and CSV files
     def run_strategy(self, st):
         stocks_df = self.get_stock_fin_indicator(
-            st = st
+            st = st,
+            trading_date=self.fin_start
+        )
+
+        # get the first and last trading date
+        first_trading_date, last_trading_date = self.find_first_last_trading_date(
+            stocks_df=stocks_df
         )
 
         # initialise trading day counter
         count_trading_day=0
 
         # initialise current trading date
-        current_trading_date=None
+        ## current_trading_date should be the first_trading_date
 
-        # the last trading date
-        last_trading_date=pd.Timestamp(self.api.get_nth_date(stocks_df[0], n=-1))
+        # the current date of the simulation might not be a trading day. It might be a holiday.
+        # finding the nearest trading day on or after the current date
+        current_trading_date, stock_df_for_finding_trading_date=self.find_nth_date_from_stocks(
+            stocks_df=stocks_df,
+            n=count_trading_day
+            )
 
         # iterate the trading day, until reaching the last trading date
-        while (current_trading_date is None) or (current_trading_date != last_trading_date):
-            
+        while current_trading_date != last_trading_date:
             # the current date of the simulation might not be a trading day. It might be a holiday.
             # finding the nearest trading day on or after the current date
-            ## the first trading date in the financial data
-            current_trading_date=pd.Timestamp(self.api.get_nth_date(stocks_df[0], n=count_trading_day))
+            current_trading_date = self.api.get_nth_date(
+                df=stock_df_for_finding_trading_date,
+                n=count_trading_day
+            )
+            
+            # if no stock could be traded throughout the financial period, the simulation runs on the last trading date and stops
+            if current_trading_date is None:
+                current_trading_date = last_trading_date
 
             # rebalancing every st.gdict['num_of_day_rebalance'] trading day (include the first day).
             ## rebalancing means resetting the portfolio to the target

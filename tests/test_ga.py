@@ -320,10 +320,11 @@ class TestGA(unittest.TestCase):
     # tear down
     def test_tear_down(self):
         fm = file_mgt.FileMgt()
+        files = []
 
         # remove files in 'JSON/unittest'
         if fm.check_file_exist('JSON/unittest'):
-            files = file_mgt.FileMgt.list_files_in_directory('JSON/unittest')
+            files.extend(file_mgt.FileMgt.list_files_in_directory('JSON/unittest'))
 
         # remove files in 'CSV/unittest'
         if fm.check_file_exist('CSV/unittest'):

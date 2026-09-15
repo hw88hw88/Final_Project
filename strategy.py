@@ -62,6 +62,9 @@ class Strategy:
         self.low_value=self.cash
         self.total_value_sequence=[]
 
+        # portfolio
+        self.portfolio_sequence={}
+
         self.sharpe_ratio=0
 
     # retrieve the market price and volume from the input data
@@ -390,6 +393,9 @@ class Strategy:
                   stocks_df, 
                   current_trading_date,
                   trading_fee):
+        # record the target portfolio on the trading day
+        self.portfolio_sequence[str(current_trading_date)]=current_target_portfolio
+        
         ## if no stock in the portfolio
         if len(list(self.stocks.keys())) == 0:
             for symbol in current_target_portfolio:
@@ -486,7 +492,7 @@ class Strategy:
                            + 0.05 * reward_win_rate
                            + 0.7 * reward_sharpe_ratio
                            - 0.05 * penalty_num_of_trade
-                           - 0.6 * penalty_max_drawdown))
+                           - 0.4 * penalty_max_drawdown))
 
         # heavy penalty:
         # penalty 3:

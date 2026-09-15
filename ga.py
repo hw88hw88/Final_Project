@@ -463,6 +463,7 @@ class GA:
             gdict['training_rewards'] = top_n_st[-counter].rewards
             gdict['fin_start'] = self.fin_start
             gdict['fin_end'] = self.fin_end
+            gdict['portfolio_sequence'] = top_n_st[-counter].portfolio_sequence
             self.fm.write_to_json(to_json_content=gdict, filename=gdict_filename)
 
             counter -= 1
