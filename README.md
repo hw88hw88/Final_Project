@@ -10,8 +10,8 @@ All rights reserved. No permission is granted to use, copy, modify, or distribut
 #### The app can run on:
 
 #### Tested Environment:
-Ubuntu 24 & 26 (WSL 2.0 on Windows) or other Linux like OS
-Python 3.12.3 & 3.14.4
+Ubuntu 24 (WSL 2.0 on Windows) or other Linux like OS
+Python 3.12.3
 node v24.20.0
 npm 12.0.2
 
