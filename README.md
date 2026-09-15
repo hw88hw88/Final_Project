@@ -3,7 +3,6 @@ My final project for academic review only.
 
 ## Notice
 This repository is for academic review only.\
-
 All rights reserved. No permission is granted to use, copy, modify, or distribute this code without explicit permission from the author.
 
 ### Instructions to run the project
@@ -13,7 +12,7 @@ All rights reserved. No permission is granted to use, copy, modify, or distribut
 Ubuntu 24 (WSL 2.0 on Windows) or other Linux like OS\
 Python 3.12.3\
 node v24.20.0\
-npm 12.0.2\
+npm 12.0.2
 
 #### Hardware should be able to run gemma-4-E2B model.
 Please download and save it the LLM to \
