@@ -1,10 +1,10 @@
 # Final_Project
-My final project for academic review only.\
+My final project for academic review only.
 
 ## Notice
 This repository is for academic review only.\
 
-All rights reserved. No permission is granted to use, copy, modify, or distribute this code without explicit permission from the author.\
+All rights reserved. No permission is granted to use, copy, modify, or distribute this code without explicit permission from the author.
 
 ### Instructions to run the project
 #### The app can run on:
@@ -19,38 +19,38 @@ npm 12.0.2\
 Please download and save it the LLM to \
 "LLM/gemma-4-E2B-it-qat-q4_0-gguf/gemma-4-E2B_q4_0-it.gguf"\
 from:\
-<https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B_q4_0-it.gguf?download=true>\
+<https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B_q4_0-it.gguf?download=true>
 
 #### Unit testing (Please always run unit testing to download new financial data before applying the investment strategy to live data)
-python3 -m unittest tests/test_*.py\
+python3 -m unittest tests/test_*.py
 
 #### Training and validation
-python3 run_ga_find_fittest.py <no. of threads>\
+python3 run_ga_find_fittest.py <no. of threads>
 
 #### Testing the performance on testing data
-python3 run_test_performance.py\
+python3 run_test_performance.py
 
 #### You need to open 2 terminals (with trained data)
 ##### Terminal 1:
-cd ga\
+cd ga
 
 ###### install dependency;
-pip install -r requirements.txt\
+pip install -r requirements.txt
 
 ###### run the test to download live data first
-python -m unittest tests/test_*.py\
+python -m unittest tests/test_*.py
 
 ###### run the API and LLM server
-flask --app run_server run\
+flask --app run_server run
 
 #### Terminal 2:
 cd web_server_node\
 npm install\
 
-node index.js\
+node index.js
 
 #### Last step:
-Browse <http://localhost:40082>\
+Browse <http://localhost:40082>
 
 ### The file structure of the GA
 
