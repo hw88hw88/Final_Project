@@ -200,6 +200,7 @@ class Validation:
             "strategy_num": st_num,
             "run_id": self.run_id,
             str(showing_task)+"_portfolio_sequence": st.portfolio_sequence,
+            str(showing_task)+"_total_value_sequence": st.total_value_sequence,
         }
 
         fm = file_mgt.FileMgt()

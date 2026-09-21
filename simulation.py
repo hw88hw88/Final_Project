@@ -19,6 +19,7 @@ class Simulation:
     # input:
     # 1. st: strategy
     # 2. symbol: the stock code
+    # 3. risk_free_interest_rate: (optional) the risk free interest rate
     # output:
     # 1. pandas data frame storing the financial data and indicators of the stock
     def calculate_fin_indicator_for_stock(
@@ -59,12 +60,12 @@ class Simulation:
             return None
 
         # calculate simple moving average
-        ## the shift of 1 row of closing price prevents look ahead bias
+        ## the shift of 1 row of closing price prevents temporal bias
         data['ma_short']=data['Close'].shift(periods=1, axis=0).rolling(st.gdict['ma_short']).mean()
         data['ma_long']=data['Close'].shift(periods=1, axis=0).rolling(st.gdict['ma_long']).mean()
 
         # calculate RSI
-        ## the shift of 1 row of closing price prevents look ahead bias
+        ## the shift of 1 row of closing price prevents temporal bias
         ### the difference of amount (not percentage here)
         daily_returns=data['Close'].shift(periods=1, axis=0).diff()
         rsi_window=st.gdict['rsi_period']
@@ -105,7 +106,7 @@ class Simulation:
         # score for the stock
         data['signal_score'] = buy_signal-sell_signal
 
-        ## the shift of 1 row of closing price prevents look ahead bias
+        ## the shift of 1 row of closing price prevents temporal bias
         data['daily_returns'] = data['Close'].shift(periods=1, axis=0).pct_change()
 
         # calculating the Sharpe ratio for the stock

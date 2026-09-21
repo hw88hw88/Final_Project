@@ -115,14 +115,17 @@ class FileMgt:
             content = f.read()
             return json.loads(content)
 
-    # check if a file exists
+    # check if a file exists and is not empty
     # input:
     # 1. filename
     # output:
-    # 1. boolean: True when the file exists, or false
+    # 1. boolean: True when the file exists and is not empty, or false
     @staticmethod
     def check_file_exist(filename):
-        return os.path.exists(filename)
+        if os.path.exists(filename):
+            if os.path.getsize(filename) > 0:
+                return True
+        return False
 
     # read CSV file for reading DNA or gene
     # input:

@@ -228,14 +228,19 @@ class Strategy:
                 
         return max_drawdown
 
-    # calculate the Sharpe ratio
+    # calculate the Sharpe ratio of the portfolio 
+    # (not to calculate the Sharpe ratio of individual stocks)
+    # (for evaluating the performance, not for selecting stocks in portfolio)
     # input:
     # 1. value_list: a list of the total value sequence of the portfolio
     # 2. risk_free_interest_rate: the risk free interest rate
     # output:
     # 1. Sharpe ratio
     @staticmethod
-    def calculate_sharpe_ratio(value_list, risk_free_interest_rate = 0.03):
+    def calculate_sharpe_ratio(
+        value_list, 
+        risk_free_interest_rate = 0.03
+        ):
 
         # using pandas series
         series = pd.Series(value_list)
@@ -368,11 +373,13 @@ class Strategy:
         # update maximum drawdown of the portfolio
         self.max_drawdown = self.calculate_max_drawdown(self.total_value_sequence)
 
-        # update the cumulative return
+        # update the cumulative return of the portfolio
         self.cumulative_return = self.total_value - self.start_up_cash
 
-        # calculate Sharpe ratio
-        self.sharpe_ratio = self.calculate_sharpe_ratio(value_list=self.total_value_sequence)
+        # calculate Sharpe ratio of the portfolio
+        self.sharpe_ratio = self.calculate_sharpe_ratio(
+            value_list=self.total_value_sequence
+            )
 
         # update the age of the portfolio
         self.age += 1
@@ -471,7 +478,7 @@ class Strategy:
         reward_cum_return = self.cumulative_return / self.start_up_cash
 
         # reward 2:
-        # num_of_increase_in_value / age or the win rate
+        # num_of_increase_in_value (number of having gains in a trading day) / age (number of trading days)
         reward_win_rate = self.num_of_increase_in_value / self.age
 
         # reward 3:
@@ -487,12 +494,16 @@ class Strategy:
         penalty_num_of_trade = self.num_of_trade / self.age
 
         # rewards
-        self.rewards = float(max(0,
-                           0.25 * reward_cum_return
-                           + 0.05 * reward_win_rate
-                           + 0.7 * reward_sharpe_ratio
-                           - 0.05 * penalty_num_of_trade
-                           - 0.4 * penalty_max_drawdown))
+        self.rewards = float(
+            max(
+                0,
+                0.25 * reward_cum_return
+                + 0.05 * reward_win_rate
+                + 0.7 * reward_sharpe_ratio
+                - 0.05 * penalty_num_of_trade
+                - 0.4 * penalty_max_drawdown
+                )
+            )
 
         # heavy penalty:
         # penalty 3:

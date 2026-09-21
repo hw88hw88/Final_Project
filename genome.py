@@ -22,10 +22,7 @@ class Genome:
     The code in this function was adapted from the mid-term coursework in the week 10 of "CM3020 Artificial Intelligence" by the author of this project
     All the code was written and prepared by the author of this project.
     
-    The code of the mid-term coursework was written with reference to the starter code from the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
-
-    Reference:
-    Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursework starter code [online] Available from: https://www.coursera.org/learn/uol-cm3020-artificial-intelligence/assignment-submission/6JASg/mid-term-coursework [8 December 2025]
+    The code of the mid-term coursework was written with reference to the starter code of the mid-term coursework of "CM3020 Artificial Intelligence" (Yee-King, no date)
     '''
     # generate a random float
     # Input: None

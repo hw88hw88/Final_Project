@@ -96,23 +96,23 @@ class APIFinData:
         df_csv_filename='CSV/stock_data/'+symbol+'_max.csv'
 
         # check if the folder exists for storing stock data in pickle
-        if not os.path.exists('pickle'):
+        if not fm.check_file_exist('pickle'):
             os.mkdir('pickle')
-        if not os.path.exists('pickle/stock_data'):
+        if not fm.check_file_exist('pickle/stock_data'):
             os.mkdir('pickle/stock_data')
 
         # check if the folder exists for storing stock data in CSV
-        if not os.path.exists('CSV'):
+        if not fm.check_file_exist('CSV'):
             os.mkdir('CSV')
-        if not os.path.exists('CSV/stock_data'):
+        if not fm.check_file_exist('CSV/stock_data'):
             os.mkdir('CSV/stock_data')
 
         # check if the folder exists for storing stock data in JSON
-        if not os.path.exists('JSON'):
+        if not fm.check_file_exist('JSON'):
             os.mkdir('JSON')
 
         ## check if the data was saved in files to reduce the number of requests made to API and save time
-        if not os.path.exists(pickle_filename) or is_force_download:
+        if not fm.check_file_exist(pickle_filename) or is_force_download:
             # download the data from external source if not exist
             raw_data = yf.download(symbol, period='max', auto_adjust=True)
             # update the last update to the time of downloading

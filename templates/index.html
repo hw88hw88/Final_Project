@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="robots" content="noindex, nofollow">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="keywords" content="chatbot, financial, financial advisor">
+        <meta name="author" content="Ho Wa NG, SRN: 200212427 of the UoL">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/bootstrap.min.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/myStyle.css') }}" />
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+        <script src="{{ url_for('static', filename='script/m_view.js') }}" defer></script>    
+        <script src="{{ url_for('static', filename='script/live_query.js') }}" defer></script>
+        <script src="{{ url_for('static', filename='script/view_page.js') }}" defer></script>
+        <title>Home - Financial Assistant - Financial Advisor Chatbot</title>
+    </head>
+    <body>
+        <div id="grid-container">
+            <header>
+                <nav>
+                    <div id="menu_button">
+                        Menu
+                    </div>
+                    <div id="menu">
+                        <a href="/" aria-label="Home">🏠Home</a>
+                        <!-- 
+                                <div id="fontSize">
+                                    <span class="smallFont" id="smallA">A</span>
+                                    <span class="mediumFont" id="mediumA">A</span>
+                                    <span class="largeFont" id="largeA">A</span>
+                                </div>
+                                <div id="scrollBar"></div>
+
+                            Title: CM1040 Web Development, Coursework 2
+                            Author: The author of this project (Anonoymous submission of assignment)
+                            Date: March 2022
+                            Code version: N/A
+                            Availability: Submitted Assignment (Not published)
+
+                            The code of "Three As for changing font size" and "scroll bar" below were from the coursework 2 of CM1040 Web Development submitted by the author of this project
+                                
+                        -->
+                        <!-- Three As for changing font size -->
+                        <div id="fontSize">
+                            <span class="smallFont" id="smallA">A</span>
+                            <span class="mediumFont" id="mediumA">A</span>
+                            <span class="largeFont" id="largeA">A</span>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Scroll bar -->
+                <div id="scrollBar"></div>
+            </header>
+        
+            <main>
+                <h1>Financial Assistant</h1>
+                <div id="response"></div>
+                <br>
+                <div id="server_msg"></div>
+                <textarea autofocus id="query" rows="5" cols="40" placeholder="Your query..."></textarea>
+                <br>
+                <br>
+                <button id="enter" class="button">Enter</button>
+                <button id="clear" class="button">Clear</button>
+                <!-- 
+                        <a href="#top" aria-label="back to top">
+                        <img
+                            src="assets/images/backToTop.jpg"
+                            alt="Back to top"
+                            id="backToTop"
+                        /></a>
+
+                    Title: CM1040 Web Development, Coursework 2
+                    Author: The author of this project (Anonoymous submission of assignment)
+                    Date: March 2022
+                    Code version: N/A
+                    Availability: Submitted Assignment (Not published)
+
+                    The code of "back to top button" below was adapted from the coursework 2 of CM1040 Web Development submitted by the author of this project
+                -->
+                <!-- back to top button -->
+                <a href="#top" aria-label="scroll to the top">
+                    <img
+                        src="{{ url_for('static', filename='img/backToTop.jpg') }}"
+                        alt="scroll to the top"
+                        id="bottom_to_top"
+                    />
+                </a>
+            </main>
+            <footer>
+                <div>
+                    <a href="/about" aria-label="About">About</a>
+                </div>
+                <div id="copyright">
+                    <p>All rights reserved. © 2026 SRN 200212427</p>            
+                </div>
+            </footer>
+        </div>
+
+    </body>
+</html>

@@ -1,0 +1,253 @@
+/* 
+    The code was adapted from the CSS code of the website <howa.space> that was written and owned by the same author.
+
+    © 2026 developer of https://howa.space SRN 200212427
+    Color reference: https://coolors.co/ 
+ */
+* 
+{
+    padding: 0; 
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* variables for the colour palette */
+:root
+{
+    --colour: black;
+    --colour2: white;
+    --colour3: red;
+    --colour4: #f2e8cf;
+    --colour5: #386641;
+    --colour6: #6a994e;
+    --colour7: #bc4749;
+    --colour8: #a7c957;
+
+}
+
+/* show finger over the 3As buttons */
+#smallA,
+#mediumA,
+#largeA 
+{
+    cursor: pointer;
+}
+
+/* Scroll bar */
+/* Reference: https://www.w3schools.com/howto/howto_js_scroll_indicator.asp */
+#scrollBar 
+{
+    border-top: 2px solid var(--colour7);
+    border-bottom: 2px solid var(--colour3);
+    height: 4px;
+    width: 0%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2;
+}
+
+/* Set the 3 sets of font sizes for users to select from them */
+.smallFont
+{
+    font-size: 0.9em;
+}
+.mediumFont 
+{
+    font-size: 1rem;
+}
+.largeFont 
+{
+    font-size: 1.2rem;
+}
+
+body
+{
+    padding: 0; 
+    margin: 0;
+    background-color: var(--colour4);
+} 
+a,a:visited 
+{ 
+    text-decoration: none; 
+    color: inherit;
+}
+nav a:hover, footer > div > a:hover, #menu_button:hover, #clear:hover, #enter:hover, .button:hover
+{
+    color: var(--colour2);
+    background-color: var(--colour5);
+}
+footer > div > a:hover
+{
+    border: 2px solid var(--colour6);
+    border-radius: 3rem;
+    padding: 0.25rem 0.5rem;
+}
+footer > div > a 
+{
+    border: 2px solid var(--colour6);
+    border-radius: 3rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0rem 0.5rem;
+}
+main
+{
+    margin: 1rem 1rem 1rem 1rem;
+    grid-area: main;
+    position: relative;
+    padding: 0.5rem 1rem;
+    align-items: center;
+}
+main a:hover
+{
+    color: var(--colour7);
+}
+header 
+{
+    grid-area: header;
+}
+footer 
+{
+    grid-area: footer;
+}
+#grid-container
+{
+    display: grid;
+    grid-template-areas:
+        'header header header header header'
+        '. main main main .'
+        'footer footer footer footer footer';
+    padding: 0;
+    margin: 0;
+}
+footer 
+{
+    text-align: center; 
+    color: black; 
+    background-color: var(--colour8); 
+    padding: 0.3rem 0rem;
+    padding-top: 0.8rem;
+    bottom: 0px; 
+    width: 100%;
+}
+footer div 
+{
+    margin-bottom: 1rem;
+}
+nav
+{
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    color: var(--colour); 
+    background-color: var(--colour8); 
+    padding: 1rem 1rem;
+    width: 100%;
+}
+nav a, nav div a, #menu_button, .button
+{
+    text-align: center;
+    padding: 0.5rem 1rem;
+    border-color: var(--colour6);
+    border-width: 3px;
+    border-style: solid;
+    border-radius: 3rem;
+    margin: 0.5rem 1rem;
+    background-color: var(--colour8);
+}
+nav div div
+{
+    float: right;
+}
+main img
+{
+    border: 1px solid var(--colour7);
+}
+textarea 
+{
+    text-align: left;
+    padding: 0.5rem 1rem;
+    border-color: var(--colour);
+    border-width: 3px;
+    border-style: solid;
+    border-radius: 1rem;
+    background-color: var(--colour2);
+}
+.red
+{
+    color: var(--colour3);
+}
+/* AI chatbot */
+/* User input */
+#query
+{
+    resize: vertical;
+    width: 100%;
+    height: fit-content;
+}
+#response
+{
+    width: 100%;
+}
+
+.button
+{
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    border-radius: 1rem;
+    float: right;
+}
+#enter
+{
+    padding: 0.5rem 2rem 0.5rem 2rem;
+    font-weight: bold;
+}
+
+#menu_button
+{
+    display: none;
+    cursor: pointer;
+    clear: both;
+}
+
+/* bottom to top button */
+#bottom_to_top
+{
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    max-width: 50px;
+    max-height: 50px;
+    animation-name: to_top_button_animation;
+    animation-duration: 5s;
+    border-radius: 1rem;
+    border: 2px solid var(--colour5);
+    padding: 7px 7px;
+    background-color: var(--colour2);
+}
+
+@keyframes to_top_button_animation
+{
+  0% {
+    right: -50px;
+    bottom: -50px;
+    opacity: 0;
+  }
+  100% {
+    right: 10px;
+    bottom: 10px;
+    opacity: 1;
+  }
+}
+
+#server_msg {
+  font-family: sans-serif;
+  color: var(--colour);
+  animation: pulse 1s infinite ease-in-out;
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.1; }
+  50% { opacity: 1; }
+  100% { opacity: 0.1; }
+}

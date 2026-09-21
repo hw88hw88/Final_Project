@@ -182,10 +182,10 @@ class GA:
     # 2. save gene spec to JSON
     def initialise_logs(self):
         # check if file path exists for saving JSON and CSV
-        if not os.path.exists(self.elite_csv_filepath):
+        if not self.fm.check_file_exist(self.elite_csv_filepath):
             os.mkdir(self.elite_csv_filepath)
 
-        if not os.path.exists(self.elite_json_filepath):
+        if not self.fm.check_file_exist(self.elite_json_filepath):
             os.mkdir(self.elite_json_filepath)
 
         # save the hyper-parameters to JSON
@@ -463,7 +463,11 @@ class GA:
             gdict['training_rewards'] = top_n_st[-counter].rewards
             gdict['fin_start'] = self.fin_start
             gdict['fin_end'] = self.fin_end
+            # although gdict should not include the following, they were added for saving to JSON only.
+            # If they were saved to 'ga_performance.json', the file would be very long.
+            ## the following are not gdict items:
             gdict['portfolio_sequence'] = top_n_st[-counter].portfolio_sequence
+            gdict['total_value_sequence'] = top_n_st[-counter].total_value_sequence
             self.fm.write_to_json(to_json_content=gdict, filename=gdict_filename)
 
             counter -= 1
@@ -497,7 +501,7 @@ class GA:
                     print('id: ', id, ', run_id: ', run_id_record[id].strip())
             try:
                 # wait 60 seconds for the user to enter which strategy to import
-                user_input = inputimeout(prompt='Enter the <id> or <run_id> to import the previous strategy: (<id>, <run_id> or not to import) \n(60 seconds) >>\n', timeout=60)
+                user_input = inputimeout(prompt='Enter the <id> or <run_id> to import the previous strategy: (<id>, <run_id> or Nothing to import) \n(60 seconds) >>\n', timeout=60)
             except TimeoutOccurred:
                 print('Time is up. No strategy is imported')
                 return None

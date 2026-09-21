@@ -1,41 +1,41 @@
 
 '''
-import ga
-import sys
+        import ga
+        import sys
 
-# start running the genetic algorithm here to start selecting the fittest creatures
-# input: 
-## 1. number of threads of the running environment
-# output: printing some metrics of the creatures for each generation
-try:
-        assert len(sys.argv) == 2, "Usage: python run_ga_find_fittest.py [number of threads] \n For example (2 threads): python run_ga_find_fittest.py 2"
+        # start running the genetic algorithm here to start selecting the fittest creatures
+        # input: 
+        ## 1. number of threads of the running environment
+        # output: printing some metrics of the creatures for each generation
+        try:
+                assert len(sys.argv) == 2, "Usage: python run_ga_find_fittest.py [number of threads] \n For example (2 threads): python run_ga_find_fittest.py 2"
 
-        # change the parameters here, if needed
-        g = ga.GA(
-                cr_start_pos=[6, 6, 10],
-                cr_start_ori=[0, 0, 0, 1],
-                pool_size = sys.argv[1], 
-                pop_size=100,
-                gene_count=3,
-                min_gene=1,
-                # if is_handcrafted_urdf = True, gene_count >= 6 for:
-                ## 1. the root link, 
-                ## 2. the top link and 
-                ## 3. the 4 wheels
-                is_handcrafted_urdf=False,
-                cr_lifetime=2400, 
-                num_of_generations=200,
-                point_mutate_rate=0.1, 
-                point_mutate_amt=0.25, 
-                shrink_mutate_rate=0.25, 
-                grow_mutate_rate=0.1,
-                is_grow_legs_only=False,
-                max_gene_to_grow=100)
-        # run the genetic algorithm
-        g.run_ga()
+                # change the parameters here, if needed
+                g = ga.GA(
+                        cr_start_pos=[6, 6, 10],
+                        cr_start_ori=[0, 0, 0, 1],
+                        pool_size = sys.argv[1], 
+                        pop_size=100,
+                        gene_count=3,
+                        min_gene=1,
+                        # if is_handcrafted_urdf = True, gene_count >= 6 for:
+                        ## 1. the root link, 
+                        ## 2. the top link and 
+                        ## 3. the 4 wheels
+                        is_handcrafted_urdf=False,
+                        cr_lifetime=2400, 
+                        num_of_generations=200,
+                        point_mutate_rate=0.1, 
+                        point_mutate_amt=0.25, 
+                        shrink_mutate_rate=0.25, 
+                        grow_mutate_rate=0.1,
+                        is_grow_legs_only=False,
+                        max_gene_to_grow=100)
+                # run the genetic algorithm
+                g.run_ga()
 
-except Exception as e:
-    print(e)
+        except Exception as e:
+        print(e)
 
 Title: CM3020 Artificial Intelligence, Week 10 Mid-term coursework
 Author: The author of this project (Anonoymous submission of assignment)
@@ -54,166 +54,172 @@ Yee-King, M., (no date) CM3020 Artificial Intelligence, Week 10 Mid-term coursew
 '''
 
 ''' 
-The running environment:
-Host OS: WSL2.0 on Windows 11
-Guest OS: Ubuntu 24.04
+        The running environment:
+        Host OS: WSL2.0 on Windows 11
+        Guest OS: Ubuntu 24.04
 
-Python 3.12.3
+        Python 3.12.3
 
 '''
-import ga
-import validation
-import sys
-import datetime
-import os
+try:
+        import ga
+        import validation
+        import sys
+        import datetime
+        import os
+        import file_mgt
 
-# initialise variable(s)
-run_id = str(datetime.datetime.now())
-run_id = run_id.replace(' ', '_')
-run_id = run_id.replace(':', '-')
+        # initialise variable(s)
+        run_id = str(datetime.datetime.now())
+        run_id = run_id.replace(' ', '_')
+        run_id = run_id.replace(':', '-')
+        run_id = 'run_id' + str(run_id)
 
-## training with data in the period
-fin_start = '2023-01-01'
-fin_end = '2023-12-31'
+        fm = file_mgt.FileMgt()
 
-## validation with data in the period
-val_fin_start = '2024-01-01'
-val_fin_end = '2024-12-31'
+        ## training with data in the period
+        fin_start = '2023-01-01'
+        fin_end = '2023-12-31'
 
-## import previous strategy or not
-### set to True to import generated strategy
-### useful to test the strategy across period, such as walk-forward test
-# the fittest strategy of the last generation of the run would be imported
-is_import_previous_strategy = False
+        ## validation with data in the period
+        val_fin_start = '2024-01-01'
+        val_fin_end = '2024-12-31'
 
-trading_fee = 0.01
-start_up_cash = 100000
+        ## import previous strategy or not
+        ### set to True to import generated strategy
+        ### useful to test the strategy across period, such as walk-forward test
+        # the fittest strategy of the last generation of the run would be imported
+        is_import_previous_strategy = False
 
-num_of_generations = 50
-num_of_elite = 1
-pop_size = 50
-point_mutate_rate = 0.3
-point_mutate_amt = 0.2
+        trading_fee = 0.01
+        start_up_cash = 100000
 
-# initialise file paths
-json_parent_path = 'JSON/'
-csv_parent_path = 'CSV/'
+        num_of_generations = 50
+        num_of_elite = 1
+        pop_size = 50
+        point_mutate_rate = 0.1
+        point_mutate_amt = 0.2
 
-json_file_path = json_parent_path + run_id
-csv_file_path = csv_parent_path + run_id
+        # initialise file paths
+        json_parent_path = 'JSON/'
+        csv_parent_path = 'CSV/'
 
-gene_spec_filename = json_file_path + '/gene_spec.json'
-ga_performance_filename = json_file_path + '/ga_performance.json'
-hyper_parameter_filename = json_file_path + '/hyper_parameter.json'
-elite_json_filepath = json_file_path + '/fittest'
-elite_csv_filepath = csv_file_path + '/fittest'
-validation_filepath = json_file_path + '/validation'
+        json_file_path = json_parent_path + run_id
+        csv_file_path = csv_parent_path + run_id
 
-# create folder(s) for saving the JSON and CSV files
-if not os.path.exists(json_parent_path):
-        os.mkdir(json_parent_path)
+        gene_spec_filename = json_file_path + '/gene_spec.json'
+        ga_performance_filename = json_file_path + '/ga_performance.json'
+        hyper_parameter_filename = json_file_path + '/hyper_parameter.json'
+        elite_json_filepath = json_file_path + '/fittest'
+        elite_csv_filepath = csv_file_path + '/fittest'
+        validation_filepath = json_file_path + '/validation'
 
-if not os.path.exists(csv_parent_path):
-        os.mkdir(csv_parent_path)
+        # create folder(s) for saving the JSON and CSV files
+        if not fm.check_file_exist(json_parent_path):
+                os.mkdir(json_parent_path)
 
-if not os.path.exists(json_file_path):
-        os.mkdir(json_file_path)
+        if not fm.check_file_exist(csv_parent_path):
+                os.mkdir(csv_parent_path)
 
-if not os.path.exists(elite_json_filepath):
-        os.mkdir(elite_json_filepath)
+        if not fm.check_file_exist(json_file_path):
+                os.mkdir(json_file_path)
 
-if not os.path.exists(csv_file_path):
-        os.mkdir(csv_file_path)
+        if not fm.check_file_exist(elite_json_filepath):
+                os.mkdir(elite_json_filepath)
 
-if not os.path.exists(elite_csv_filepath):
-        os.mkdir(elite_csv_filepath)
+        if not fm.check_file_exist(csv_file_path):
+                os.mkdir(csv_file_path)
 
-if not os.path.exists(validation_filepath):
-        os.mkdir(validation_filepath)
+        if not fm.check_file_exist(elite_csv_filepath):
+                os.mkdir(elite_csv_filepath)
 
-## saving run_id to CSV file
-with open (csv_parent_path + '/run_id.csv', 'a') as f:
-        f.write(run_id + ',')
+        if not fm.check_file_exist(validation_filepath):
+                os.mkdir(validation_filepath)
 
-validation_performance_filename = json_file_path + '/validation_performance.json'
-validation_hyper_parameter_filename = json_file_path + '/validation_hyper_parameter.json'
+        ## saving run_id to CSV file
+        with open (csv_parent_path + '/run_id.csv', 'a') as f:
+                f.write(run_id + ',')
 
-# start running the genetic algorithm here to start selecting the fittest creatures
-# input: 
-# 1. number of threads of the running environment
-# output: 
-# 1. printing some metrics of the creatures for each generation
-# 2. saving the results, metrics, performance etc. to CSV and JSON files
-if len(sys.argv) == 2 and type(int(sys.argv[1])) is int:
-        pool_size = sys.argv[1]
-else:
-        pool_size = 1
-        print("Usage: python run_ga_find_fittest.py [number of threads] \n For example (2 threads): python run_ga_find_fittest.py 2")
-# stock ticker symbols were stored in 'CSV/stock_code.csv'
-# change the parameters here, if needed
-g = ga.GA(
-        pool_size = int(pool_size),
-        # pop_size should be larger than num_of_elite
-        pop_size = pop_size,
-        num_of_generations = num_of_generations,
-        point_mutate_rate = point_mutate_rate, 
-        point_mutate_amt = point_mutate_amt,
+        validation_performance_filename = json_file_path + '/validation_performance.json'
+        validation_hyper_parameter_filename = json_file_path + '/validation_hyper_parameter.json'
 
-        fin_start = fin_start,
-        fin_end = fin_end,
+        # start running the genetic algorithm here to start selecting the fittest creatures
+        # input: 
+        # 1. number of threads of the running environment
+        # output: 
+        # 1. printing some metrics of the creatures for each generation
+        # 2. saving the results, metrics, performance etc. to CSV and JSON files
+        if len(sys.argv) == 2 and type(int(sys.argv[1])) is int:
+                pool_size = sys.argv[1]
+        else:
+                pool_size = 1
+                print("Usage: python run_ga_find_fittest.py [number of threads] \n For example (2 threads): python run_ga_find_fittest.py 2")
 
-        start_up_cash = start_up_cash,
-        # trading fee includes commission fee, trading platform fee, and other fee for each transaction of stocks
-        # trading fee is per order fee (e.g. 0.01 means US$0.01 per share in the order)
-        trading_fee = trading_fee,
+        g = ga.GA(
+                pool_size = int(pool_size),
+                # pop_size should be larger than num_of_elite
+                pop_size = pop_size,
+                num_of_generations = num_of_generations,
+                point_mutate_rate = point_mutate_rate, 
+                point_mutate_amt = point_mutate_amt,
 
-        num_of_elite = num_of_elite,
-        run_id = run_id,
+                fin_start = fin_start,
+                fin_end = fin_end,
 
-        # file path:
-        ## mainly for ga
-        gene_spec_filename = gene_spec_filename,
-        ga_performance_filename = ga_performance_filename,
-        hyper_parameter_filename = hyper_parameter_filename,
-        run_id_filename = str(csv_parent_path) + '/run_id.csv',
+                start_up_cash = start_up_cash,
+                # trading fee includes commission fee, trading platform fee, and other fee for each transaction of stocks
+                # trading fee is per order fee (e.g. 0.01 means US$0.01 per share in the order)
+                trading_fee = trading_fee,
 
-        ## sharing from ga to validation
-        elite_json_filepath = elite_json_filepath,
-        elite_csv_filepath = elite_csv_filepath,
+                num_of_elite = num_of_elite,
+                run_id = run_id,
 
-        is_import_previous_strategy = is_import_previous_strategy,
-)
-# run the genetic algorithm
-g.run_ga()
+                # file path:
+                ## mainly for ga
+                gene_spec_filename = gene_spec_filename,
+                ga_performance_filename = ga_performance_filename,
+                hyper_parameter_filename = hyper_parameter_filename,
+                run_id_filename = str(csv_parent_path) + '/run_id.csv',
 
-# validation
-valid = validation.Validation(
-        val_fin_start = val_fin_start,
-        val_fin_end = val_fin_end,
+                ## sharing from ga to validation
+                elite_json_filepath = elite_json_filepath,
+                elite_csv_filepath = elite_csv_filepath,
 
-        # other parameters
-        run_id = run_id,
-        trading_fee = trading_fee,
-        start_up_cash = start_up_cash,
+                is_import_previous_strategy = is_import_previous_strategy,
+        )
+        # run the genetic algorithm
+        g.run_ga()
 
-        # file path:
-        ## mainly for ga
-        gene_spec_filename = gene_spec_filename,
+        # validation
+        valid = validation.Validation(
+                val_fin_start = val_fin_start,
+                val_fin_end = val_fin_end,
 
-        ## sharing from ga to validation
-        elite_json_filepath = elite_json_filepath,
-        elite_csv_filepath = elite_csv_filepath,
+                # other parameters
+                run_id = run_id,
+                trading_fee = trading_fee,
+                start_up_cash = start_up_cash,
 
-        ## for validation
-        validation_hyper_parameter_filename = validation_hyper_parameter_filename,
-)
+                # file path:
+                ## mainly for ga
+                gene_spec_filename = gene_spec_filename,
 
-# run validation for the fittest strategy in each generation
-for gen in range(num_of_generations):
-        for num_e in range(num_of_elite):
-                # run validation for the input strategy
-                valid.run_validation(
-                        st_generation=gen, 
-                        st_num=num_e, 
-                        validation_performance_filename = validation_filepath + '/validation_performance_gen' + str(gen) + '_elite' + str(num_e) + '.json'
-                )
+                ## sharing from ga to validation
+                elite_json_filepath = elite_json_filepath,
+                elite_csv_filepath = elite_csv_filepath,
+
+                ## for validation
+                validation_hyper_parameter_filename = validation_hyper_parameter_filename,
+        )
+
+        # run validation for the fittest strategy in each generation
+        for gen in range(num_of_generations):
+                for num_e in range(num_of_elite):
+                        # run validation for the input strategy
+                        valid.run_validation(
+                                st_generation=gen, 
+                                st_num=num_e, 
+                                validation_performance_filename = validation_filepath + '/validation_performance_gen' + str(gen) + '_elite' + str(num_e) + '.json'
+                        )
+except Exception as e:
+        print('Error(run_ga_find_fittest.py): ', e)
