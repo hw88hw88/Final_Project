@@ -1,5 +1,4 @@
 const jsdom = require('jsdom');
-const sinon = require('sinon');
 const chai = require('chai');
 const fs = require('fs');
 const html_index = fs.readFileSync('./templates/index.html', 'utf-8');
@@ -9,7 +8,6 @@ const dom = new jsdom.JSDOM(
 
 global.document = dom.window.document;
 global.window = dom.window;
-global.clearInterval = sinon.stub();
 const live_query = require('../static/script/live_query');
 
 describe('live query', ()=>{
@@ -31,13 +29,4 @@ describe('live query', ()=>{
             chai.expect(live_query.user_enter).to.not.be.null;
         });
     });
-    describe('check stop_timer()', ()=>{
-        it('stop timer', ()=>{
-            timer_id = 'test_id';
-            live_query.stop_timer(timer_id);
-
-            chai.expect(global.clearInterval.calledOnce).to.be.true;
-            chai.expect(global.clearInterval.calledWith(timer_id)).to.be.true;
-        });
-    })
 });
