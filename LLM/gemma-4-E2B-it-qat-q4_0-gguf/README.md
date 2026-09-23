@@ -1,0 +1,1 @@
+Please download the gemma-4-E2B_q4_0-it.gguf and place it here.
