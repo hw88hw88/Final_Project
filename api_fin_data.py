@@ -122,7 +122,7 @@ class APIFinData:
                 filename=symbol_last_update_filename
             )
             # wait to avoid abuse the API
-            time.sleep(0.01)
+            time.sleep(0.001)
 
             # check if the raw data is empty
             # record downloadable and undownloadable symbols in CSV files

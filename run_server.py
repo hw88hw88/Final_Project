@@ -6,6 +6,7 @@ import datetime
 import re
 import threading
 import random
+import api_fin_data
 
 # import flask for the API server
 from flask import Flask, request, render_template
@@ -220,6 +221,14 @@ def chatbot_new_job_api():
 @app.route('/about', methods=['GET'])
 def about():
     return render_template('about.html'), 200
+
+# showing the license
+# input: (no specific input, just a GET request)
+# output:
+# 1. the license text file
+@app.route('/apache_license', methods=['GET'])
+def apache_license():
+    return render_template('LICENSE.txt'), 200, {'Content-Type': 'text/plain'}
 
 # reply to users the status or the result of their previous requests
 # input:

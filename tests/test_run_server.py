@@ -12,6 +12,7 @@ class TestChatbot(unittest.TestCase):
         self.assertIsNotNone(run_server.chatbot_generate_response)
         self.assertIsNotNone(run_server.chatbot_new_job_api)
         self.assertIsNotNone(run_server.about)
+        self.assertIsNotNone(run_server.apache_license)
         self.assertIsNotNone(run_server.chatbot_get_status)
         self.assertIsNotNone(run_server.app)
         self.assertIsNotNone(run_server.user_background)
@@ -141,11 +142,19 @@ class TestChatbot(unittest.TestCase):
                 self.assertEqual(response.json['sender'], sender)
                 break
 
-    # test endpoint about()
+    # test endpoint about() /about
     def test_about(self):
         self.client = run_server.app.test_client()
         # test GET method
         response = self.client.get('/about')
+        self.assertIsNotNone(response)
+        self.assertEqual(response.status_code, 200)
+
+    # test endpoint apache_license() /apache_license
+    def test_apache_license(self):
+        self.client = run_server.app.test_client()
+        # test GET method
+        response = self.client.get('/apache_license')
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, 200)
 

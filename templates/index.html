@@ -56,7 +56,24 @@
         
             <main>
                 <h1>Financial Assistant</h1>
-                <div id="response"></div>
+                <div id="response">
+                    <div>
+                        <b>Financial Assistant</b>:<br>Hello! I am your financial assistant. My goal is to build an investment portfolio for you.
+                        <br>
+                        To help me create the most suitable portfolio for your needs, please provide the following information:
+                        <br>
+                        <ul>
+                            <li>
+                                <strong>Risk Tolerance Level:</strong>
+                                Please specify if your risk tolerance is High, Low, or Balanced.
+                            </li>
+                            <li>
+                                <strong>Date of Investment:</strong>
+                                Please provide a specific date between 2024-01-01 and today (as our system was trained using data up to the end of 2023).
+                            </li>
+                        </ul> 
+                    </div>
+                </div>
                 <br>
                 <div id="server_msg"></div>
                 <textarea autofocus id="query" rows="5" cols="40" placeholder="Your query..."></textarea>
@@ -94,7 +111,7 @@
                     <a href="/about" aria-label="About">About</a>
                 </div>
                 <div id="copyright">
-                    <p>All rights reserved. © 2026 SRN 200212427</p>            
+                    <p>© 2026 SRN 200212427</p>            
                 </div>
             </footer>
         </div>

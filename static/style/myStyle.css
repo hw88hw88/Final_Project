@@ -9,6 +9,7 @@
     padding: 0; 
     margin: 0;
     box-sizing: border-box;
+    min-width: 0;
 }
 
 /* variables for the colour palette */
@@ -66,6 +67,8 @@ body
     padding: 0; 
     margin: 0;
     background-color: var(--colour4);
+    min-width: 0;
+    max-width: 100%;
 } 
 a,a:visited 
 { 
@@ -92,11 +95,13 @@ footer > div > a
 }
 main
 {
-    margin: 1rem 1rem 1rem 1rem;
+    padding: 1rem 1rem 1rem 1rem;
     grid-area: main;
     position: relative;
     padding: 0.5rem 1rem;
     align-items: center;
+    max-width: 100%;
+    min-width: 0%;
 }
 main a:hover
 {
@@ -108,7 +113,15 @@ header
 }
 footer 
 {
+    text-align: center; 
+    color: black; 
+    background-color: var(--colour8); 
+    padding: 0.3rem 0rem;
+    padding-top: 0.8rem;
+    bottom: 0px; 
+    width: 100%;
     grid-area: footer;
+    position: fixed;
 }
 #grid-container
 {
@@ -119,16 +132,6 @@ footer
         'footer footer footer footer footer';
     padding: 0;
     margin: 0;
-}
-footer 
-{
-    text-align: center; 
-    color: black; 
-    background-color: var(--colour8); 
-    padding: 0.3rem 0rem;
-    padding-top: 0.8rem;
-    bottom: 0px; 
-    width: 100%;
 }
 footer div 
 {
@@ -183,11 +186,37 @@ textarea
 {
     resize: vertical;
     width: 100%;
+    max-width: 100%;
     height: fit-content;
 }
-#response
+#response > div
 {
     width: 100%;
+    padding: 1rem;
+    border-width: 3px;
+    border-style: solid;
+    border-color: var(--colour7);
+    border-radius: 1rem;
+    background-color: var(--colour2);
+    margin: 1rem 0;
+}
+#response p, #response div
+{
+    max-width: 100%;
+    min-width: 0%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+#greeting
+{
+    width: 100%;
+    padding: 1rem;
+    border-width: 3px;
+    border-style: solid;
+    border-color: var(--colour7);
+    border-radius: 1rem;
+    background-color: var(--colour2);
+    margin-bottom: 1rem;
 }
 
 .button
@@ -195,6 +224,7 @@ textarea
     padding: 0.5rem 1rem 0.5rem 1rem;
     border-radius: 1rem;
     float: right;
+    margin-bottom: 6rem;
 }
 #enter
 {
@@ -223,6 +253,7 @@ textarea
     border: 2px solid var(--colour5);
     padding: 7px 7px;
     background-color: var(--colour2);
+    z-index: 2;
 }
 
 @keyframes to_top_button_animation

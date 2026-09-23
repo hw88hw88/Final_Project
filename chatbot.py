@@ -236,7 +236,6 @@ class Chatbot:
                     'ma_short': list(stock_dict['ma_short', ''].values())[0],
                     'ma_long': list(stock_dict['ma_long', ''].values())[0],
                     'rsi': list(stock_dict['rsi', ''].values())[0],
-                    # 'signal_score': list(stock_dict['signal_score', ''].values())[0],
                     'daily_return': list(stock_dict['daily_returns', ''].values())[0],
                     'annualized_return': list(stock_dict['annualized_return', ''].values())[0],
                     'sharpe_ratio': list(stock_dict['sharpe_ratio', ''].values())[0],
@@ -298,9 +297,10 @@ class Chatbot:
         2. investment_explanation: boolean (true if the user ask for explanation of recommendations)
         3. prefer_low_risk: string (balanced or high or low, null if not mentioned)
         4. investment_date: string ('yyyy-mm-dd' or 'yy-m-d' or null).
-            - If no date is mentioned: null.
-            - If a future date is mentioned: {today_date}.
-            - If a past date is mentioned: that specific date (that specific date must be on or after '2024-01-01').
+            - If no date is mentioned: null;
+            - If today is mentioned: {today_date};
+            - If a future date is mentioned: {today_date};
+            - If a past date is mentioned: that specific date (that specific date must be on or after '2024-01-01');
             - If the date is before '2024-01-01': '2024-01-01'.
 
         Example Output Format:
@@ -427,7 +427,7 @@ class Chatbot:
                 return None
             # prepare the prompt
             prompt = f"""
-            As a professional financial advisor, you need to make recommendations based on the investment portfolio of the stock(s) {portfolio} to the user on {trading_date}.
+            As a financial assistant, you need to recommend the investment portfolio of the stock(s) {portfolio} to the user on {trading_date}.
 
             Strategy:
                 Stop Loss: {np.round(portfolio_dict.get('stgy').get('stop_loss'), 2)}
@@ -442,8 +442,10 @@ class Chatbot:
                     Financial indicators:
                         Simple Moving Average (SMA) Short: {np.round(portfolio_dict.get(p).get('ma_short'), 2)} ({gdict.get('ma_short')} days);
                         Simple Moving Average (SMA) Long: {np.round(portfolio_dict.get(p).get('ma_long'), 2)} ({gdict.get('ma_long')} days);
-                        Relative Strength Index (RSI): {np.round(portfolio_dict.get(p).get('rsi'), 2)} ({gdict.get('rsi_period')} day(s)); and
-                        Sharpe ratio: {np.round(portfolio_dict.get(p).get('sharpe_ratio'), 2)}.
+                        Relative Strength Index (RSI): {np.round(portfolio_dict.get(p).get('rsi'), 2)} ({gdict.get('rsi_period')} day(s));
+                        Sharpe Ratio: {np.round(portfolio_dict.get(p).get('sharpe_ratio'), 2)};
+                        Annualized Return: {np.round(portfolio_dict.get(p).get('annualized_return'), 2)}; and
+                        Annualized Volatility: {np.round(portfolio_dict.get(p).get('annualized_volatility'), 2)}.
                 """
 
             prompt = prompt + """
@@ -451,10 +453,11 @@ class Chatbot:
                 Explain the recommendations based on the financial indicators and strategy provided.
                 For each stock in the portfolio, your response should include:
                     the price, 
-                    Simple Moving Average Short, 
-                    Simple Moving Average Long,
-                    Relative Strength Index, and 
-                    Sharpe ratio.
+                    Comparing Simple Moving Average Short with Simple Moving Average Long,
+                    Relative Strength Index,
+                    Sharpe ratio,
+                    Annualized Volatility, and
+                    Annualized Return
                 Please reply to the user on behalf of me directly and do not quote me.
                 Please output the text in a body tag of HTML without any interactive elements.
                 """
@@ -464,14 +467,14 @@ class Chatbot:
                 return None
             # prepare the prompt
             prompt = f"""
-            You are a professional financial advisor.
-            You need to briefly introduce an investment portfolio containing the stock(s) {portfolio} on {trading_date} to the user.
+            You are the user's financial assistant.
+            You need to recommend an investment portfolio of the stock(s) {portfolio} on {trading_date} to the user.
             Strategy:
                 Stop Loss: {np.round(portfolio_dict.get('stgy').get('stop_loss'), 2)}
                 Take Profit: {np.round(portfolio_dict.get('stgy').get('take_profit'), 2)}
                 Number of days to rebalance: {portfolio_dict.get('stgy').get('num_of_day_rebalance')}
             You do not need to analyze or explain the portfolio.
-            You can remind the users that they can ask for explanation.
+            Please remind the users that they can ask for explanation of the portfolio.
             Please reply to the user on behalf of me directly and do not quote me.
             Please output the text in a body tag of HTML without any interactive elements.
             """
@@ -479,14 +482,13 @@ class Chatbot:
         else:
             # prepare the prompt
             prompt = """
-            You are a professional financial advisor.
+            You are the user's financial assistant.
             You need to make investment recommendations to the users.
             The investment recommendation is an investment portfolio on a trading day. The portfolio was built based on the investment strategy generated with the system.
             You need to ask:
                 the user(s) their risk tolerance level (high, low, or balanced), and 
                 the date of investment. 
             The date should be between 2024-01-01 and today, since the system was trained with data in 2023.
-            Also, you can inform the users that they can ask the investment portfolio and its explanation. 
             Please output the text in a body tag of HTML without any interactive elements.
             """
 

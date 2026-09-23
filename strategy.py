@@ -497,9 +497,9 @@ class Strategy:
         self.rewards = float(
             max(
                 0,
-                0.25 * reward_cum_return
-                + 0.05 * reward_win_rate
-                + 0.7 * reward_sharpe_ratio
+                0.4 * reward_cum_return
+                + 0.5 * reward_win_rate
+                + 0.1 * reward_sharpe_ratio
                 - 0.05 * penalty_num_of_trade
                 - 0.4 * penalty_max_drawdown
                 )

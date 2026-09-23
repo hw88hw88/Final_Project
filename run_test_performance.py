@@ -8,7 +8,7 @@ try:
 
     ## the number of run_id in the CSV file
     ### 0 means the first run_id, 1 means the second
-    num_of_run = 8
+    num_of_run = 7
 
     ## the testing period
     testing_fin_start = '2025-01-01'
